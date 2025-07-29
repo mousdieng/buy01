@@ -48,15 +48,13 @@ export class CartService {
   }
 
   public toggleCart(event: Event) {
-    event.stopPropagation();
+    // event.stopPropagation();
 
     if (!this.isAuthenticated()) {
-      console.warn('Authentication required to access cart');
       return;
     }
 
     if (!this.isClient()) {
-      console.warn('Only client can access cart functionality');
       return;
     }
 
@@ -68,6 +66,15 @@ export class CartService {
     } else {
       document.body.classList.remove('overflow-hidden');
     }
+  }
+
+  hideCart() {
+    if (!this.isAuthenticated() || !this.isClient()) {
+      return;
+    }
+
+    this.showCart.update(() => false)
+    document.body.classList.remove('overflow-hidden');
   }
 
   // Load cart from localStorage
@@ -275,17 +282,15 @@ export class CartService {
     return of(cart);
   }
 
-  // Clear entire cart
   clearCart(): Observable<void> {
     if (!this.isAuthenticated() || !this.isClient()) return of(void 0);
-
+    console.log('Clearing cart');
     this.clearCartFromStorage();
     this.cartSubject.next(null);
     this.cartCountSubject.next(0);
     return of(void 0);
   }
 
-  // Check if product is in cart
   isProductInCart(productId: string): boolean {
     if (!this.isAuthenticated() || !this.isClient()) {
       return false;

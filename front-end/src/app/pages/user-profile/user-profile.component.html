@@ -1,602 +1,771 @@
-<div class="profile-container">
+
+<div class="w-full min-h-screen bg-gradient-to-b from-indigo-50 to-white md:p-5 p-2">
     <p-toast></p-toast>
     <p-confirmDialog></p-confirmDialog>
 
     <!-- Profile Header -->
-    <div class="profile-header">
-        <p-card>
-            <div class="header-content">
-                <div class="avatar-section">
-                    <p-avatar *ngIf="!user?.avatar"
-                              icon="pi pi-user"
-                              styleClass="profile-avatar"
-                              [style]="{ 'background-color': '#ece9fc', color: '#2a1261' }"
-                              shape="circle" />
-                    <p-avatar *ngIf="user?.avatar"
-                              image="{{environment.apiUrl}}user/avatar/{{user?.avatar}}"
-                              styleClass="mr-2"
-                              [style]="{ 'background-color': '#ece9fc', color: '#2a1261' }"
-                              shape="circle" />
-                    <p-button
-                            icon="pi pi-camera"
-                            class="p-button-rounded p-button-secondary avatar-upload-btn"
-                            (click)="showAvatarDialog = true"
-                            pTooltip="Change Avatar">
-                    </p-button>
-                </div>
-
-                <div class="user-info">
-                    <h2>{{ user?.name || 'User' }}</h2>
-                    <p class="user-email">{{ user?.email }}</p>
-                    <p-chip
-                            [label]="user?.role || 'USER'"
-                            [styleClass]="user?.role === Role.SELLER ? 'seller-badge' : 'user-badge'">
-                    </p-chip>
-                </div>
-            </div>
-        </p-card>
-    </div>
-
-    <!-- Main Content Tabs -->
-    <p-tabView>
-        <p-tabPanel header="Profile Settings" leftIcon="pi pi-user">
-            <div class="profile-settings">
-                <div class="settings-grid">
-                    <!-- Basic Information -->
-                        <form [formGroup]="editProfileForm" (ngSubmit)="saveEditProfile()">
-                            <div class="dialog-form">
-                                <div class="form-field">
-                                    <label for="editName">First Name *</label>
-                                    <input
-                                            pInputText
-                                            id="editName"
-                                            formControlName="name"
-                                            [class.ng-invalid]="isFieldInvalid(editProfileForm, 'name')">
-                                    <small class="error-text" *ngIf="isFieldInvalid(editProfileForm, 'name')">
-                                        {{ getFieldError(editProfileForm, 'name') }}
-                                    </small>
-                                </div>
-
-                                <div class="form-field">
-                                    <label for="editEmail">Email *</label>
-                                    <input
-                                            pInputText
-                                            id="editEmail"
-                                            formControlName="email"
-                                            [class.ng-invalid]="isFieldInvalid(editProfileForm, 'email')">
-                                    <small class="error-text" *ngIf="isFieldInvalid(editProfileForm, 'email')">
-                                        {{ getFieldError(editProfileForm, 'email') }}
-                                    </small>
-                                </div>
-                            </div>
-                            <p-button
-                                    label="Save Changes"
-                                    icon="pi pi-check"
-                                    (onClick)="saveEditProfile()"
-                                    [disabled]="editProfileForm.invalid"
-                            >
-                            </p-button>
-                        </form>
-
-                </div>
-
-                <!-- Change Password -->
-                <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
-                        <div class="dialog-form">
-                            <div class="form-field">
-                                <label for="currentPassword">Current Password *</label>
-                                <input
-                                        pInputText
-                                        type="password"
-                                        id="currentPassword"
-                                        formControlName="currentPassword"
-                                        [class.ng-invalid]="isFieldInvalid(passwordForm, 'currentPassword')">
-                                <small class="error-text" *ngIf="isFieldInvalid(passwordForm, 'currentPassword')">
-                                    {{ getFieldError(passwordForm, 'currentPassword') }}
-                                </small>
-                            </div>
-
-                            <div class="form-field">
-                                <label for="newPassword">New Password *</label>
-                                <input
-                                        pInputText
-                                        type="password"
-                                        id="newPassword"
-                                        formControlName="newPassword"
-                                        [class.ng-invalid]="isFieldInvalid(passwordForm, 'newPassword')">
-                                <small class="error-text" *ngIf="isFieldInvalid(passwordForm, 'newPassword')">
-                                    {{ getFieldError(passwordForm, 'newPassword') }}
-                                </small>
-                            </div>
-
-                            <div class="form-field">
-                                <label for="confirmPassword">Confirm Password *</label>
-                                <input
-                                        pInputText
-                                        type="password"
-                                        id="confirmPassword"
-                                        formControlName="confirmPassword"
-                                        [class.ng-invalid]="isFieldInvalid(passwordForm, 'confirmPassword')">
-                                <small class="error-text" *ngIf="isFieldInvalid(passwordForm, 'confirmPassword')">
-                                    {{ getFieldError(passwordForm, 'confirmPassword') }}
-                                </small>
-                            </div>
+    <div class="max-w-7xl mx-auto">
+        <div class="bg-white">
+            <div class="p-6">
+                <div class="flex flex-col md:flex-row items-center gap-6">
+                    <!-- Avatar Section -->
+                    <div class="relative">
+                        <div class="relative">
+                            <p-avatar *ngIf="!user?.avatar"
+                                      [label]="user?.name?.charAt(0)"
+                                      class="w-24 h-24"
+                                      size="large"
+                                      shape="circle">
+                            </p-avatar>
+                            <p-avatar *ngIf="user?.avatar"
+                                      image="{{environment.apiUrl}}user/avatar/{{user?.avatar}}"
+                                      class="w-24 h-24 text-center"
+                                      size="large"
+                                      shape="circle">
+                            </p-avatar>
                         </div>
-                        <p-button
-                                label="Change Password"
-                                icon="pi pi-check"
-                                (click)="changePassword()"
-                                [disabled]="passwordForm.invalid">
-                        </p-button>
-                    </form>
-
-                <!-- Danger Zone -->
-                <p-card header="Danger Zone" class="danger-card">
-                    <div class="danger-actions">
-                        <div class="danger-info">
-                            <h4>Delete Account</h4>
-                            <p>Permanently delete your account and all associated data. This action cannot be undone.</p>
-                        </div>
-                        <p-button
-                                label="Delete Account"
-                                icon="pi pi-trash"
-                                class="p-button-danger"
-                                (click)="deleteAccount()">
-                        </p-button>
+                        <button
+                                *ngIf="!isClient()"
+                                class=" bg-blue-500 absolute -bottom-2 -right-2 hover:bg-blue-300 px-2 rounded-md border border-white"
+                                (click)="showAvatarDialog = true"
+                                pTooltip="Change Avatar">
+                            <i class="pi pi-camera text-white"></i>
+                        </button>
                     </div>
-                </p-card>
+
+                    <!-- User Info -->
+                    <div class="text-center md:text-left">
+                        <h2 class="text-2xl font-bold text-gray-800">{{ user?.name || 'User' }}</h2>
+                        <p class="text-gray-600 mb-2">{{ user?.email }}</p>
+                        <div class="flex justify-center md:justify-start items-center gap-2">
+                            <p-chip
+                                    [label]="user?.role || 'USER'"
+                                    class="text-xs font-medium px-3 py-1 rounded-full"
+                                    [ngClass]="user?.role === Role.SELLER ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'">
+                            </p-chip>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </p-tabPanel>
-
-        <p-tabPanel header="My Orders" leftIcon="pi pi-shopping-cart">
-            <div class="orders-section">
-                <!-- Search and Filter -->
-                <p-card class="search-card">
-                    <form [formGroup]="searchForm">
-                        <div class="search-grid">
-                            <div class="search-field">
-                                <label for="searchKeyword">Search Orders</label>
-                                <input
-                                        pInputText
-                                        id="searchKeyword"
-                                        placeholder="Search by order ID, product name..."
-                                        (input)="onSearchInput($event)"
-                                        class="search-input">
+        </div>
+        <!-- Main Content Tabs -->
+        <div class="">
+            <p-tabView [scrollable]="true">
+                <!-- Profile Settings Tab -->
+                <p-tabPanel header="Profile Settings" leftIcon="pi pi-user">
+                    <div class="md:p-6 md:space-y-8 space-y-4">
+                        <!-- Personal Information -->
+                        <div class="border border-gray-200 rounded-lg md:p-6 p-2">
+                            <div class="mb-6">
+                                <h3 class="md:text-lg text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-id-card text-blue-500"></i>
+                                    Personal Information
+                                </h3>
+                                <p class="text-gray-600 text-xs md:text-sm">Update your personal details and contact information</p>
                             </div>
 
-                            <div class="filter-field">
-                                <label for="statusFilter">Order Status</label>
-                                <p-dropdown
-                                        id="statusFilter"
-                                        formControlName="status"
-                                        [options]="statusOptions"
-                                        placeholder="All Statuses"
-                                        optionLabel="label"
-                                        optionValue="value"
-                                        [showClear]="true">
-                                </p-dropdown>
+                            <form [formGroup]="editProfileForm" (ngSubmit)="saveEditProfile()">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                    <div>
+                                        <label for="editName" class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                            <i class="pi pi-user text-gray-500"></i>
+                                            First Name *
+                                        </label>
+                                        <input
+                                                pInputText
+                                                id="editName"
+                                                formControlName="name"
+                                                class="w-full"
+                                                [class.border-red-500]="isFieldInvalid(editProfileForm, 'name')">
+                                        <small class="text-red-500 text-xs mt-1 flex items-center gap-1" *ngIf="isFieldInvalid(editProfileForm, 'name')">
+                                            <i class="pi pi-exclamation-triangle"></i>
+                                            {{ getFieldError(editProfileForm, 'name') }}
+                                        </small>
+                                    </div>
+
+                                    <div>
+                                        <label for="editEmail" class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                            <i class="pi pi-envelope text-gray-500"></i>
+                                            Email *
+                                        </label>
+                                        <input
+                                                pInputText
+                                                id="editEmail"
+                                                formControlName="email"
+                                                class="w-full"
+                                                [class.border-red-500]="isFieldInvalid(editProfileForm, 'email')">
+                                        <small class="text-red-500 text-xs mt-1 flex items-center gap-1" *ngIf="isFieldInvalid(editProfileForm, 'email')">
+                                            <i class="pi pi-exclamation-triangle"></i>
+                                            {{ getFieldError(editProfileForm, 'email') }}
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <p-button
+                                            label="Save Changes"
+                                            icon="pi pi-check"
+                                            (onClick)="saveEditProfile()"
+                                            class="bg-blue-600 hover:bg-blue-700 border-blue-600"
+                                            [disabled]="editProfileForm.invalid">
+                                    </p-button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Security Settings -->
+                        <div class="border border-gray-200 rounded-lg md:p-6 p-2">
+                            <div class="mb-6">
+                                <h3 class="md:text-lg text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-shield text-blue-500"></i>
+                                    Security Settings
+                                </h3>
+                                <p class="text-gray-600 md:text-sm text-xs">Change your password to keep your account secure</p>
                             </div>
 
-                            <div class="filter-field">
-                                <label for="paymentFilter">Payment Status</label>
-                                <p-dropdown
-                                        id="paymentFilter"
-                                        formControlName="paymentStatus"
-                                        [options]="paymentStatusOptions"
-                                        placeholder="All Payment Status"
-                                        optionLabel="label"
-                                        optionValue="value"
-                                        [showClear]="true">
-                                </p-dropdown>
+                            <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                    <div>
+                                        <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                            <i class="pi pi-lock text-gray-500"></i>
+                                            Current Password *
+                                        </label>
+                                        <input
+                                                pInputText
+                                                type="password"
+                                                id="currentPassword"
+                                                formControlName="currentPassword"
+                                                class="w-full"
+                                                [class.border-red-500]="isFieldInvalid(passwordForm, 'currentPassword')">
+                                        <small class="text-red-500 text-xs mt-1 flex items-center gap-1" *ngIf="isFieldInvalid(passwordForm, 'currentPassword')">
+                                            <i class="pi pi-exclamation-triangle"></i>
+                                            {{ getFieldError(passwordForm, 'currentPassword') }}
+                                        </small>
+                                    </div>
+
+                                    <div>
+                                        <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                            <i class="pi pi-key text-gray-500"></i>
+                                            New Password *
+                                        </label>
+                                        <input
+                                                pInputText
+                                                type="password"
+                                                id="newPassword"
+                                                formControlName="newPassword"
+                                                class="w-full"
+                                                [class.border-red-500]="isFieldInvalid(passwordForm, 'newPassword')">
+                                        <small class="text-red-500 text-xs mt-1 flex items-center gap-1" *ngIf="isFieldInvalid(passwordForm, 'newPassword')">
+                                            <i class="pi pi-exclamation-triangle"></i>
+                                            {{ getFieldError(passwordForm, 'newPassword') }}
+                                        </small>
+                                    </div>
+
+                                    <div>
+                                        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                            <i class="pi pi-verified text-gray-500"></i>
+                                            Confirm Password *
+                                        </label>
+                                        <input
+                                                pInputText
+                                                type="password"
+                                                id="confirmPassword"
+                                                formControlName="confirmPassword"
+                                                class="w-full"
+                                                [class.border-red-500]="isFieldInvalid(passwordForm, 'confirmPassword')">
+                                        <small class="text-red-500 text-xs mt-1 flex items-center gap-1" *ngIf="isFieldInvalid(passwordForm, 'confirmPassword')">
+                                            <i class="pi pi-exclamation-triangle"></i>
+                                            {{ getFieldError(passwordForm, 'confirmPassword') }}
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <p-button
+                                            label="Update Password"
+                                            icon="pi pi-shield"
+                                            (click)="changePassword()"
+                                            class="bg-blue-600 hover:bg-blue-700 border-blue-600"
+                                            [disabled]="passwordForm.invalid">
+                                    </p-button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Danger Zone -->
+                        <div class="border border-red-200 rounded-lg md:p-6 p-2 bg-red-50">
+                            <div class="mb-6">
+                                <h3 class="md:text-lg text-sm font-semibold text-red-800 flex items-center gap-2">
+                                    <i class="pi pi-exclamation-triangle text-red-500"></i>
+                                    Danger Zone
+                                </h3>
+                                <p class="text-red-600 md:text-sm text-xs">Irreversible and destructive actions</p>
                             </div>
 
-                            <div class="filter-field">
-                                <label for="startDate">Start Date</label>
-                                <p-calendar
-                                        id="startDate"
-                                        formControlName="startDate"
-                                        [showIcon]="true"
-                                        placeholder="From date">
-                                </p-calendar>
-                            </div>
-
-                            <div class="filter-field">
-                                <label for="endDate">End Date</label>
-                                <p-calendar
-                                        id="endDate"
-                                        formControlName="endDate"
-                                        [showIcon]="true"
-                                        placeholder="To date">
-                                </p-calendar>
-                            </div>
-
-                            <div class="action-buttons">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <div class="flex items-start gap-4">
+                                    <div class="bg-red-100 p-3 rounded-full">
+                                        <i class="pi pi-trash text-red-500"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-800">Delete Account</h4>
+                                        <p class="text-gray-600 text-sm mb-2">Permanently delete your account and all associated data. This action cannot be undone.</p>
+                                        <ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
+                                            <li>All your orders will be archived</li>
+                                            <li>Profile information will be removed</li>
+                                            <li>You won't be able to recover this data</li>
+                                        </ul>
+                                    </div>
+                                </div>
                                 <p-button
-                                        label="Clear Filters"
-                                        icon="pi pi-filter-slash"
-                                        class="p-button-outlined"
-                                        (click)="clearFilters()">
+                                        label="Delete Account"
+                                        icon="pi pi-trash"
+                                        class="bg-red-600 hover:bg-red-700 border-red-600"
+                                        (click)="deleteAccount()">
                                 </p-button>
                             </div>
                         </div>
-                    </form>
-                </p-card>
+                    </div>
+                </p-tabPanel>
 
-                <!-- Orders Table -->
-                <p-card class="orders-table-card">
-                    <ng-container *ngIf="!ordersLoading; else loadingSkeleton">
-                        <p-table
-                                [value]="filteredOrders"
-                                [paginator]="false"
-                                [responsive]="true"
-                                styleClass="p-datatable-gridlines">
+                <!-- My Orders Tab -->
+                <p-tabPanel header="My Orders" leftIcon="pi pi-shopping-cart">
+                    <div class="md:p-6 space-y-6">
+                        <!-- Search and Filter -->
+                        <div class="border border-gray-200 rounded-lg md:p-6 p-2 bg-gray-50">
+                            <div class="mb-6">
+                                <h3 class="md:text-lg text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                    <i class="pi pi-search text-blue-500"></i>
+                                    Find Your Orders
+                                </h3>
+                                <p class="text-gray-600 md:text-sm text-xs">Search and filter through your order history</p>
+                            </div>
 
-                            <ng-template pTemplate="header">
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Date</th>
-                                    <th>Items</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                    <th>Payment</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </ng-template>
+                            <form [formGroup]="searchForm">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="searchKeyword" class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                            <i class="pi pi-search text-gray-500"></i>
+                                            Search Orders
+                                        </label>
+                                        <input
+                                                pInputText
+                                                id="searchKeyword"
+                                                placeholder="Order ID, product name, or description..."
+                                                (input)="onSearchInput($event)"
+                                                class="w-full">
+                                    </div>
 
-                            <ng-template pTemplate="body" let-order>
-                                <tr>
-                                    <td>
-                                        <strong>#{{ order.id }}</strong>
-                                    </td>
-                                    <td>
-                                        {{ formatDate(order.createdAt) }}
-                                    </td>
-                                    <td>
-                                        {{ order.orderItems?.length || 0 }} item(s)
-                                    </td>
-                                    <td>
-                                        <strong>{{ formatCurrency(order.totalAmount) }}</strong>
-                                    </td>
-                                    <td>
-                                        <p-tag
-                                                [value]="order.orderStatus"
-                                                [severity]="getOrderStatusSeverity(order.orderStatus)">
-                                        </p-tag>
-                                    </td>
-                                    <td>
-                                        <p-tag
-                                                [value]="order.paymentStatus"
-                                                [severity]="getPaymentStatusSeverity(order.paymentStatus)">
-                                        </p-tag>
-                                    </td>
-                                    <td>
-                                        <div class="order-actions">
-                                            <p-button
-                                                    icon="pi pi-eye"
-                                                    class="p-button-text p-button-rounded"
-                                                    pTooltip="View Details"
-                                                    [routerLink]="['/order']"
-                                                    [queryParams]="{ id: order.id }"
-                                                    routerLinkActive="active"
-                                                    ariaCurrentWhenActive="page">
-                                            </p-button>
-
-                                            <p-button
-                                                    icon="pi pi-refresh"
-                                                    class="p-button-text p-button-rounded"
-                                                    (click)="reorderOrder(order)"
-                                                    [disabled]="!canReorder(order)"
-                                                    pTooltip="Reorder">
-                                            </p-button>
-
-                                            <p-button
-                                                    icon="pi pi-times"
-                                                    class="p-button-text p-button-rounded"
-                                                    (click)="cancelOrder(order)"
-                                                    [disabled]="!canCancelOrder(order)"
-                                                    pTooltip="Cancel Order">
-                                            </p-button>
-
-                                            <p-button
-                                                    icon="pi pi-download"
-                                                    class="p-button-text p-button-rounded"
-                                                    (click)="downloadReceipt(order)"
-                                                    pTooltip="Download Receipt">
-                                            </p-button>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label for="statusFilter" class="block text-sm font-medium text-gray-700 mb-1">Order Status</label>
+                                            <p-dropdown
+                                                    id="statusFilter"
+                                                    formControlName="status"
+                                                    [options]="statusOptions"
+                                                    placeholder="All Statuses"
+                                                    optionLabel="label"
+                                                    optionValue="value"
+                                                    [showClear]="true"
+                                                    class="w-full">
+                                            </p-dropdown>
                                         </div>
-                                    </td>
-                                </tr>
-                            </ng-template>
 
-                            <ng-template pTemplate="emptymessage">
-                                <tr>
-                                    <td colspan="7" class="text-center">
-                                        <div class="empty-state">
-                                            <i class="pi pi-shopping-cart" style="font-size: 3rem; color: red"></i>
-                                            <h3>No Orders Found</h3>
-                                            <p>You haven't placed any orders yet or no orders match your search criteria.</p>
+                                        <div>
+                                            <label for="paymentFilter" class="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                                            <p-dropdown
+                                                    id="paymentFilter"
+                                                    formControlName="paymentStatus"
+                                                    [options]="paymentStatusOptions"
+                                                    placeholder="All Payment Status"
+                                                    optionLabel="label"
+                                                    optionValue="value"
+                                                    [showClear]="true"
+                                                    class="w-full">
+                                            </p-dropdown>
                                         </div>
-                                    </td>
-                                </tr>
+
+                                        <div>
+                                            <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                                            <div class="flex items-center gap-2">
+                                                <p-calendar
+                                                        id="startDate"
+                                                        formControlName="startDate"
+                                                        [showIcon]="true"
+                                                        placeholder="From date"
+                                                        class="w-full">
+                                                </p-calendar>
+                                                <span class="text-gray-500">to</span>
+                                                <p-calendar
+                                                        id="endDate"
+                                                        formControlName="endDate"
+                                                        [showIcon]="true"
+                                                        placeholder="To date"
+                                                        class="w-full">
+                                                </p-calendar>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex justify-end">
+                                        <p-button
+                                                label="Clear All"
+                                                icon="pi pi-filter-slash"
+                                                class="border-gray-300 text-gray-700 hover:bg-gray-100"
+                                                (click)="clearFilters()">
+                                        </p-button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Orders Table -->
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <ng-container *ngIf="!ordersLoading; else loadingSkeleton">
+                                <div class="bg-white p-4 border-b border-gray-200 flex justify-between items-center">
+                                    <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                        <i class="pi pi-list text-blue-500"></i>
+                                        Order History
+                                    </h3>
+                                    <span class="text-sm text-gray-600">{{ filteredOrders.length || 0 }} orders found</span>
+                                </div>
+
+                                <div class="overflow-x-auto">
+                                    <p-table
+                                            [value]="filteredOrders"
+                                            [paginator]="false"
+                                            [responsive]="true"
+                                            styleClass="p-datatable-sm">
+                                        <ng-template pTemplate="header">
+                                            <tr>
+                                                <th class="text-left">Order</th>
+                                                <th class="text-left">Date</th>
+                                                <th class="text-left">Items</th>
+                                                <th class="text-left">Total</th>
+                                                <th class="text-left">Status</th>
+                                                <th class="text-left">Payment</th>
+                                                <th class="text-right">Actions</th>
+                                            </tr>
+                                        </ng-template>
+
+                                        <ng-template pTemplate="body" let-order>
+                                            <tr class="hover:bg-gray-50">
+                                                <td>
+                                                    <div class="flex flex-col">
+                                                        <span class="font-medium">#{{ order.id }}</span>
+                                                        <span class="text-xs text-gray-500">{{ order.type || 'Standard' }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="flex flex-col">
+                                                        <span>{{ formatDate(order.createdAt) }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="flex items-center gap-1">
+                                                        <span>{{ order.orderItems?.length || 0 }}</span>
+                                                        <span class="text-sm text-gray-500">{{ (order.orderItems?.length || 0) === 1 ? 'item' : 'items' }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="font-medium">{{ formatCurrency(order.totalAmount) }}</span>
+                                                </td>
+                                                <td>
+                                                    <p-tag
+                                                            [value]="order.orderStatus"
+                                                            [severity]="getOrderStatusSeverity(order.orderStatus)"
+                                                            class="text-xs px-2 py-1">
+                                                    </p-tag>
+                                                </td>
+                                                <td>
+                                                    <p-tag
+                                                            [value]="order.paymentStatus"
+                                                            [severity]="getPaymentStatusSeverity(order.paymentStatus)"
+                                                            class="text-xs px-2 py-1">
+                                                    </p-tag>
+                                                </td>
+                                                <td>
+                                                    <div class="flex justify-end gap-1">
+                                                        <p-button
+                                                                icon="pi pi-eye"
+                                                                class="p-button-text p-button-sm text-blue-500 hover:bg-blue-50"
+                                                                pTooltip="View Details"
+                                                                [routerLink]="['/order']"
+                                                                [queryParams]="{ id: order.id }"
+                                                                routerLinkActive="active"
+                                                                ariaCurrentWhenActive="page">
+                                                        </p-button>
+
+                                                        <div *ngIf="isClient()">
+                                                            <p-button
+                                                                    *ngIf=" order.status === OrderStatus.DELIVERED"
+                                                                    pTooltip="ReOrder"
+                                                                    icon="pi pi-refresh"
+                                                                    severity="info"
+                                                                    class="p-button-text p-button-sm text-blue-500 hover:bg-blue-50"
+                                                                    styleClass="w-full"
+                                                                    (onClick)="showReOrderDialog(order)">
+                                                            </p-button>
+
+                                                            <p-button
+                                                                    *ngIf="order.status === OrderStatus.PENDING"
+                                                                    pTooltip="Complete Order"
+                                                                    icon="pi pi-undo"
+                                                                    severity="info"
+                                                                    class="p-button-text p-button-sm text-blue-500 hover:bg-blue-50"
+                                                                    styleClass="w-full"
+                                                                    (onClick)="completeOrder(order)">
+                                                            </p-button>
+
+                                                            <p-button
+                                                                    *ngIf="order.status === OrderStatus.PENDING"
+                                                                    pTooltip="Cancel Order"
+                                                                    icon="pi pi-times"
+                                                                    class="p-button-text p-button-sm text-blue-500 hover:bg-blue-50"
+                                                                    severity="danger"
+                                                                    styleClass="w-full"
+                                                                    (onClick)="showCancelDialog(order)">
+                                                            </p-button>
+                                                            <p-button
+                                                                    *ngIf="order.status === OrderStatus.CANCELLED"
+                                                                    pTooltip="Remove Order"
+                                                                    icon="pi pi-undo"
+                                                                    class="p-button-text p-button-sm text-blue-500 hover:bg-blue-50"
+                                                                    severity="info"
+                                                                    styleClass="w-full"
+                                                                    (onClick)="showRemoveOrderDialog(order)">
+                                                            </p-button>
+                                                        </div>
+
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </ng-template>
+
+                                        <ng-template pTemplate="emptymessage">
+                                            <tr>
+                                                <td colspan="7" class="py-12 text-center">
+                                                    <div class="flex flex-col items-center justify-center space-y-4">
+                                                        <i class="pi pi-shopping-cart text-gray-400 text-5xl"></i>
+                                                        <h3 class="text-lg font-medium text-gray-700">No Orders Found</h3>
+                                                        <p class="text-gray-500">You haven't placed any orders yet or no orders match your search criteria.</p>
+                                                        <p-button
+                                                                label="Start Shopping"
+                                                                icon="pi pi-shopping-bag"
+                                                                class="bg-blue-600 hover:bg-blue-700 border-blue-600"
+                                                                routerLink="/products">
+                                                        </p-button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </ng-template>
+                                    </p-table>
+                                </div>
+                            </ng-container>
+
+                            <ng-template #loadingSkeleton>
+                                <div class="p-6">
+                                    <div class="mb-4">
+                                        <p-skeleton height="2rem" width="200px"></p-skeleton>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <p-skeleton height="4rem" *ngFor="let item of [1,2,3,4,5]"></p-skeleton>
+                                    </div>
+                                </div>
                             </ng-template>
-                        </p-table>
-                    </ng-container>
 
-                    <ng-template #loadingSkeleton>
-                        <div class="loading-skeleton">
-                            <p-skeleton height="3rem" class="mb-2" *ngFor="let item of [1,2,3,4,5]"></p-skeleton>
-                        </div>
-                    </ng-template>
-
-                    <!-- Pagination -->
-                    <p-paginator
-                            *ngIf="totalOrders > 0"
-                            [rows]="pageSize"
-                            [totalRecords]="totalOrders"
-                            [first]="currentPage * pageSize"
-                            (onPageChange)="onPageChange($event)"
-                            [rowsPerPageOptions]="[5, 10, 20, 50]">
-                    </p-paginator>
-                </p-card>
-            </div>
-        </p-tabPanel>
-
-        <p-tabPanel header="Stats" leftIcon="pi pi-chart-line">
-            <div class="p-6 space-y-6">
-                <!-- User Statistics -->
-                <div *ngIf="isUserStats()" class="space-y-6">
-                    <!-- Order Overview Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-blue-600 text-sm font-medium">Total Orders</p>
-                                    <p class="text-2xl font-bold text-blue-800">{{getUserStats().totalOrders}}</p>
+                            <!-- Pagination -->
+                            <div *ngIf="totalOrders > 0" class="bg-white p-4 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center">
+                                <div class="mb-2 md:mb-0">
+                                    <span class="text-sm text-gray-600">
+                                        Showing {{ (currentPage * pageSize) + 1 }} to {{ Math.min((currentPage + 1) * pageSize, totalOrders) }} of {{ totalOrders }} orders
+                                    </span>
                                 </div>
-                                <i class="pi pi-shopping-cart text-blue-500 text-2xl"></i>
-                            </div>
-                        </div>
-
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-green-600 text-sm font-medium">Completed</p>
-                                    <p class="text-2xl font-bold text-green-800">{{getUserStats().completedOrders}}</p>
-                                </div>
-                                <i class="pi pi-check-circle text-green-500 text-2xl"></i>
-                            </div>
-                        </div>
-
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-yellow-600 text-sm font-medium">Pending</p>
-                                    <p class="text-2xl font-bold text-yellow-800">{{getUserStats().pendingOrders}}</p>
-                                </div>
-                                <i class="pi pi-clock text-yellow-500 text-2xl"></i>
-                            </div>
-                        </div>
-
-                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-red-600 text-sm font-medium">Cancelled</p>
-                                    <p class="text-2xl font-bold text-red-800">{{getUserStats().cancelledOrders}}</p>
-                                </div>
-                                <i class="pi pi-times-circle text-red-500 text-2xl"></i>
+                                <p-paginator
+                                        [rows]="pageSize"
+                                        [totalRecords]="totalOrders"
+                                        [first]="currentPage * pageSize"
+                                        (onPageChange)="onPageChange($event)"
+                                        [rowsPerPageOptions]="[5, 10, 20, 50]"
+                                        class="border-0">
+                                </p-paginator>
                             </div>
                         </div>
                     </div>
+                </p-tabPanel>
 
-                    <!-- Purchase Summary -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white border border-gray-200 rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <i class="pi pi-dollar text-green-500 mr-2"></i>
-                                Purchase Summary
-                            </h3>
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-600">Total Spent:</span>
-                                    <span class="font-semibold text-lg text-green-600">${{getUserStats().totalSpent | number:'1.2-2'}}</span>
+                <!-- Stats Tab -->
+                <p-tabPanel header="Stats" leftIcon="pi pi-chart-line">
+                    <div class="md:p-6 space-y-6">
+                        <!-- User Statistics -->
+                        <div *ngIf="isUserStats()" class="space-y-6">
+                            <!-- Order Overview Cards -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-blue-600 text-sm font-medium">Total Orders</p>
+                                            <p class="text-2xl font-bold text-blue-800">{{getUserStats().totalOrders}}</p>
+                                        </div>
+                                        <i class="pi pi-shopping-cart text-blue-500 text-2xl"></i>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-600">Items Purchased:</span>
-                                    <span class="font-semibold">{{getUserStats().totalItemsPurchased}}</span>
+
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-green-600 text-sm font-medium">Completed</p>
+                                            <p class="text-2xl font-bold text-green-800">{{getUserStats().completedOrders}}</p>
+                                        </div>
+                                        <i class="pi pi-check-circle text-green-500 text-2xl"></i>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-600">First Purchase:</span>
-                                    <span class="font-semibold">{{getUserStats().firstPurchaseDate | date:'mediumDate'}}</span>
+
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-yellow-600 text-sm font-medium">Pending</p>
+                                            <p class="text-2xl font-bold text-yellow-800">{{getUserStats().pendingOrders}}</p>
+                                        </div>
+                                        <i class="pi pi-clock text-yellow-500 text-2xl"></i>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-600">Last Purchase:</span>
-                                    <span class="font-semibold">{{getUserStats().lastPurchaseDate | date:'mediumDate'}}</span>
+
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-red-600 text-sm font-medium">Cancelled</p>
+                                            <p class="text-2xl font-bold text-red-800">{{getUserStats().cancelledOrders}}</p>
+                                        </div>
+                                        <i class="pi pi-times-circle text-red-500 text-2xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Purchase Summary -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="bg-white border border-gray-200 rounded-lg md:p-6 p-2">
+                                    <h3 class="md:text-lg text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                        <i class="pi pi-dollar text-green-500"></i>
+                                        Purchase Summary
+                                    </h3>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600 text-xs md:text-lg">Total Spent:</span>
+                                            <span class="font-semibold md:text-lg text-sm text-green-600">${{getUserStats().totalSpent | number:'1.2-2'}}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600 text-xs md:text-lg">Items Purchased:</span>
+                                            <span class="font-semibold md:text-lg text-sm">{{getUserStats().totalItemsPurchased}}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600 text-xs md:text-lg">First Purchase:</span>
+                                            <span class="font-semibold md:text-lg text-sm">{{getUserStats().firstPurchaseDate | date:'mediumDate'}}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600 text-xs md:text-lg">Last Purchase:</span>
+                                            <span class="font-semibold md:text-lg text-sm">{{getUserStats().lastPurchaseDate | date:'mediumDate'}}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Most Purchased Product -->
+                                <div class="bg-white border border-gray-200 rounded-lg md:p-6 p-2">
+                                    <h3 class="md:text-lg text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                        <i class="pi pi-star text-yellow-500"></i>
+                                        Most Purchased Product
+                                    </h3>
+                                    <div class="flex items-center gap-4" *ngIf="getUserStats().mostPurchasedProduct">
+                                        <p-image
+                                                [src]="getMedia(getUserStats().mostPurchasedProductId, getUserStats().mostPurchasedProduct.media)"
+                                                [alt]="getUserStats().mostPurchasedProduct.product.name"
+                                                [preview]="true"
+                                                imageClass="w-16 h-16 md:w-24 md:h-24"
+                                        />
+                                        <div class="flex-1">
+                                            <p class="font-medium text-gray-800">{{getUserStats().mostPurchasedProduct.product.name}}</p>
+                                            <p class="text-sm text-gray-600 mb-1">Quantity: {{getUserStats().mostPurchasedProductQuantity}}</p>
+                                            <p class="text-sm font-semibold text-green-600">${{getUserStats().mostPurchasedProduct.product.price | number:'1.2-2'}}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Favorite Seller -->
+                            <div class="bg-white border border-gray-200 rounded-lg md:p-6 p-2"  >
+                                <h3 class="md:text-lg text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="pi pi-heart text-red-500"></i>
+                                    Favorite Seller
+                                </h3>
+                                <div class="flex items-center gap-4" *ngIf="getUserStats().favoriteSeller">
+                                    <p-avatar
+                                            *ngIf="getUserStats().favoriteSeller.avatar"
+                                            image="{{environment.apiUrl}}user/avatar/{{getUserStats().favoriteSeller.avatar}}"
+                                            size="large"
+                                            shape="circle">
+                                    </p-avatar>
+                                    <p-avatar
+                                            *ngIf="!getUserStats().favoriteSeller.avatar"
+                                            size="large"
+                                            [label]="getUserStats().favoriteSeller.name.charAt(0)"
+                                            shape="circle">
+                                    </p-avatar>
+                                    <div>
+                                        <p class="font-medium text-gray-800">{{getUserStats().favoriteSeller.name}}</p>
+                                        <p class="text-sm text-gray-600">{{getUserStats().favoriteSeller.email}}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Most Purchased Product -->
-                        <div class="bg-white border border-gray-200 rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <i class="pi pi-star text-yellow-500 mr-2"></i>
-                                Most Purchased Product
-                            </h3>
-                            <div class="flex items-center space-x-4" *ngIf="getUserStats().mostPurchasedProduct">
-                                <img
-                                        [src]="getUserStats().mostPurchasedProduct.media[0]?.imagePath || '/assets/placeholder.jpg'"
-                                        [alt]="getUserStats().mostPurchasedProduct.product.name"
-                                        class="w-16 h-16 object-cover rounded-lg border">
-                                <div class="flex-1">
-                                    <p class="font-medium text-gray-800">{{getUserStats().mostPurchasedProduct.product.name}}</p>
-                                    <p class="text-sm text-gray-600 mb-1">Quantity: {{getUserStats().mostPurchasedProductQuantity}}</p>
-                                    <p class="text-sm font-semibold text-green-600">${{getUserStats().mostPurchasedProduct.product.price | number:'1.2-2'}}</p>
+                        <!-- Seller Statistics -->
+                        <div *ngIf="isSellerStats()" class="space-y-6">
+                            <!-- Revenue and Order Overview -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-purple-600 text-sm font-medium">Total Revenue</p>
+                                            <p class="text-2xl font-bold text-purple-800">${{getSellerStats().totalRevenue | number:'1.2-2'}}</p>
+                                        </div>
+                                        <i class="pi pi-dollar text-purple-500 text-2xl"></i>
+                                    </div>
+                                </div>
+
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-blue-600 text-sm font-medium">Total Orders</p>
+                                            <p class="text-2xl font-bold text-blue-800">{{getSellerStats().totalOrders}}</p>
+                                        </div>
+                                        <i class="pi pi-shopping-cart text-blue-500 text-2xl"></i>
+                                    </div>
+                                </div>
+
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-green-600 text-sm font-medium">Completed</p>
+                                            <p class="text-2xl font-bold text-green-800">{{getSellerStats().completedOrders}}</p>
+                                        </div>
+                                        <i class="pi pi-check-circle text-green-500 text-2xl"></i>
+                                    </div>
+                                </div>
+
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-yellow-600 text-sm font-medium">Pending</p>
+                                            <p class="text-2xl font-bold text-yellow-800">{{getSellerStats().pendingOrders}}</p>
+                                        </div>
+                                        <i class="pi pi-clock text-yellow-500 text-2xl"></i>
+                                    </div>
+                                </div>
+
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-red-600 text-sm font-medium">Cancelled</p>
+                                            <p class="text-2xl font-bold text-red-800">{{getSellerStats().cancelledOrders}}</p>
+                                        </div>
+                                        <i class="pi pi-times-circle text-red-500 text-2xl"></i>
+                                    </div>
                                 </div>
                             </div>
+
+                            <!-- Sales Performance -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="bg-white border border-gray-200 rounded-lg md:p-6 p-2">
+                                    <h3 class="md:text-lg text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                        <i class="pi pi-chart-bar text-blue-500"></i>
+                                        Sales Performance
+                                    </h3>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600 text-xs md:text-sm">Items Sold:</span>
+                                            <span class="font-semibold text-sm md:text-lg">{{getSellerStats().totalItemsSold}}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600 text-xs md:text-sm">Total Customers:</span>
+                                            <span class="font-semibold text-sm md:text-lg">{{getSellerStats().totalCustomers}}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600 text-xs md:text-sm">First Order:</span>
+                                            <span class="font-semibold text-sm md:text-lg">{{getSellerStats().firstOrderDate | date:'mediumDate'}}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600 text-xs md:text-sm">Last Order:</span>
+                                            <span class="font-semibold text-sm md:text-lg">{{getSellerStats().lastOrderDate | date:'mediumDate'}}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Best Selling Product -->
+                                <div class="bg-white border border-gray-200 rounded-lg md:p-6 p-2">
+                                    <h3 class="md:text-lg text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                        <i class="pi pi-star text-yellow-500"></i>
+                                        Best Selling Product
+                                    </h3>
+                                    <div class="flex items-center gap-4" *ngIf="getSellerStats().bestSellingProduct">
+                                        <p-image
+                                                [src]="getMedia(getSellerStats().bestSellingProductId, getSellerStats().bestSellingProduct.media)"
+                                                [alt]="getSellerStats().bestSellingProduct.product.name"
+                                                [preview]="true"
+                                                imageClass="w-16 h-16 md:w-24 md:h-24"
+                                        />
+                                        <div class="flex-1">
+                                            <p class="font-medium text-gray-800">{{getSellerStats().bestSellingProduct.product.name}}</p>
+                                            <p class="text-sm text-gray-600 mb-1">Sold: {{getSellerStats().bestSellingProductQuantity}}</p>
+                                            <p class="text-sm font-semibold text-green-600">${{getSellerStats().bestSellingProduct.product.price | number:'1.2-2'}}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Favorite Customer -->
+                            <div class="bg-white border border-gray-200 rounded-lg md:p-6 p-2">
+                                <h3 class="md:text-lg text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="pi pi-users text-blue-500"></i>
+                                    Top Customer
+                                </h3>
+                                <div class="flex items-center gap-4" *ngIf="getSellerStats().favoriteCustomer">
+                                    <p-avatar
+                                            [image]=""
+                                            [label]="getSellerStats().favoriteCustomer.name.charAt(0)"
+                                            size="large"
+                                            shape="circle">
+                                    </p-avatar>
+                                    <div>
+                                        <p class="font-medium text-gray-800">{{getSellerStats().favoriteCustomer.name}}</p>
+                                        <p class="text-sm text-gray-600">{{getSellerStats().favoriteCustomer.email}}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- No Data State -->
+                        <div *ngIf="!userStats" class="text-center py-12">
+                            <i class="pi pi-chart-line text-gray-400 text-5xl mb-4"></i>
+                            <p class="text-gray-500">No statistics available</p>
                         </div>
                     </div>
+                </p-tabPanel>
+            </p-tabView>
+        </div>
+    </div>
 
-                    <!-- Favorite Seller -->
-                    <div class="bg-white border border-gray-200 rounded-lg p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="pi pi-heart text-red-500 mr-2"></i>
-                            Favorite Seller
-                        </h3>
-                        <div class="flex items-center space-x-4" *ngIf="getUserStats().favoriteSeller">
-                            <p-avatar
-                                    image="{{environment.apiUrl}}user/avatar/{{getUserStats().favoriteSeller.avatar}}"
-                                    [label]="getUserStats().favoriteSeller.name.charAt(0)"
-                                    size="large"
-                                    shape="circle">
-                            </p-avatar>
-                            <div>
-                                <p class="font-medium text-gray-800">{{getUserStats().favoriteSeller.name}}</p>
-                                <p class="text-sm text-gray-600">{{getUserStats().favoriteSeller.email}}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Seller Statistics -->
-                <div *ngIf="isSellerStats()" class="space-y-6">
-                    <!-- Revenue and Order Overview -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 lg:col-span-1">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-purple-600 text-sm font-medium">Total Revenue</p>
-                                    <p class="text-2xl font-bold text-purple-800">${{getSellerStats().totalRevenue | number:'1.2-2'}}</p>
-                                </div>
-                                <i class="pi pi-dollar text-purple-500 text-2xl"></i>
-                            </div>
-                        </div>
-
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-blue-600 text-sm font-medium">Total Orders</p>
-                                    <p class="text-2xl font-bold text-blue-800">{{getSellerStats().totalOrders}}</p>
-                                </div>
-                                <i class="pi pi-shopping-cart text-blue-500 text-2xl"></i>
-                            </div>
-                        </div>
-
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-green-600 text-sm font-medium">Completed</p>
-                                    <p class="text-2xl font-bold text-green-800">{{getSellerStats().completedOrders}}</p>
-                                </div>
-                                <i class="pi pi-check-circle text-green-500 text-2xl"></i>
-                            </div>
-                        </div>
-
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-yellow-600 text-sm font-medium">Pending</p>
-                                    <p class="text-2xl font-bold text-yellow-800">{{getSellerStats().pendingOrders}}</p>
-                                </div>
-                                <i class="pi pi-clock text-yellow-500 text-2xl"></i>
-                            </div>
-                        </div>
-
-                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-red-600 text-sm font-medium">Cancelled</p>
-                                    <p class="text-2xl font-bold text-red-800">{{getSellerStats().cancelledOrders}}</p>
-                                </div>
-                                <i class="pi pi-times-circle text-red-500 text-2xl"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sales Performance -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white border border-gray-200 rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <i class="pi pi-chart-bar text-blue-500 mr-2"></i>
-                                Sales Performance
-                            </h3>
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-600">Items Sold:</span>
-                                    <span class="font-semibold">{{getSellerStats().totalItemsSold}}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-600">Total Customers:</span>
-                                    <span class="font-semibold">{{getSellerStats().totalCustomers}}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-600">First Order:</span>
-                                    <span class="font-semibold">{{getSellerStats().firstOrderDate | date:'mediumDate'}}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-600">Last Order:</span>
-                                    <span class="font-semibold">{{getSellerStats().lastOrderDate | date:'mediumDate'}}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Best Selling Product -->
-                        <div class="bg-white border border-gray-200 rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <i class="pi pi-star text-yellow-500 mr-2"></i>
-                                Best Selling Product
-                            </h3>
-                            <div class="flex items-center space-x-4" *ngIf="getSellerStats().mostPurchasedProduct">
-                                <img
-                                        [src]="getSellerStats().mostPurchasedProduct.media[0]?.imagePath || '/assets/placeholder.jpg'"
-                                        [alt]="getSellerStats().mostPurchasedProduct.product.name"
-                                        class="w-16 h-16 object-cover rounded-lg border">
-                                <div class="flex-1">
-                                    <p class="font-medium text-gray-800">{{getSellerStats().mostPurchasedProduct.product.name}}</p>
-                                    <p class="text-sm text-gray-600 mb-1">Sold: {{getSellerStats().bestSellingProductQuantity}}</p>
-                                    <p class="text-sm font-semibold text-green-600">${{getSellerStats().mostPurchasedProduct.product.price | number:'1.2-2'}}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Favorite Customer -->
-                    <div class="bg-white border border-gray-200 rounded-lg p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="pi pi-users text-blue-500 mr-2"></i>
-                            Top Customer
-                        </h3>
-                        <div class="flex items-center space-x-4" *ngIf="getSellerStats().favoriteCustomer">
-                            <p-avatar
-                                    [image]="getSellerStats().favoriteCustomer.avatar || ''"
-                                    [label]="getSellerStats().favoriteCustomer.name.charAt(0)"
-                                    size="large"
-                                    shape="circle">
-                            </p-avatar>
-                            <div>
-                                <p class="font-medium text-gray-800">{{getSellerStats().favoriteCustomer.name}}</p>
-                                <p class="text-sm text-gray-600">{{getSellerStats().favoriteCustomer.email}}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- No Data State -->
-                <div *ngIf="!userStats" class="text-center py-12">
-                    <i class="pi pi-chart-line text-gray-400 text-6xl mb-4"></i>
-                    <p class="text-gray-500 text-lg">No statistics available</p>
-                </div>
-            </div>
-        </p-tabPanel>
-    </p-tabView>
-
+    <!-- Avatar Dialog -->
     <p-dialog
             header="Choose Avatar"
             [(visible)]="showAvatarDialog"
             [modal]="true"
             [closable]="true"
             [style]="{width: '600px'}"
-            (onHide)="closeAvatarDialog()">
+            (onHide)="closeAvatarDialog()"
+            styleClass="!m-2 !md:m-0"
+    >
 
-        <div>
+        <div class="space-y-4">
             <label class="block text-sm font-medium text-gray-700">Profile Picture</label>
             <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
                 <div class="space-y-1 text-center">
@@ -619,166 +788,91 @@
 
             <!-- Profile Picture Preview -->
             <div *ngIf="currentFile" class="mt-4 flex flex-col items-center">
-                <div class="relative w-32 h-32 overflow-hidden border-2 border-indigo-200">
+                <div class="relative w-32 h-32 overflow-hidden border-2 border-indigo-200 rounded-full">
                     <img [src]="currentFile.preview" alt="Profile Preview" class="w-full h-full object-cover">
-                    <button (click)="removeFile()" class="absolute top-1 right-1 bg-white/80 hover:bg-white p-1 shadow-md transition-all duration-300">
+                    <button (click)="removeFile()" class="absolute top-1 right-1 bg-white/80 hover:bg-white p-1 rounded-full shadow-md transition-all duration-300">
                         <i class="pi pi-times text-gray-600"></i>
                     </button>
                 </div>
                 <p class="mt-2 text-sm text-gray-500">{{ currentFile.fileName }}</p>
             </div>
-            <p-button
-                    label="Save Avatar"
-                    icon="pi pi-check"
-                    [disabled]="!currentFile"
-                    (click)="uploadAvatar()">
-            </p-button>
+            <div class="flex justify-end">
+                <p-button
+                        label="Save Avatar"
+                        icon="pi pi-check"
+                        class="bg-blue-600 hover:bg-blue-700 border-blue-600"
+                        [disabled]="!currentFile"
+                        (click)="uploadAvatar()">
+                </p-button>
+            </div>
         </div>
     </p-dialog>
+
+    <p-dialog
+            header="Re-Order"
+            [(visible)]="reOrderDialog"
+            [modal]="true"
+            class="w-full"
+            styleClass="!m-2 !md:m-0 !p-2"
+            contentStyleClass="!p-0"
+    >
+        <div class="space-y-4">
+            <app-order-form [isReOrdering]="true" [order]="selectedOrder" [isInCheckout]="false" />
+        </div>
+    </p-dialog>
+
+    <!-- Cancel Dialog -->
+    <p-dialog
+            header="Cancel Order"
+            [(visible)]="showCancelOrderDialog"
+            [modal]="true"
+            [style]="{width: '400px'}"
+            styleClass="!m-2 !md:m-0"
+    >
+        <div class="space-y-4">
+            <p>Are you sure you want to cancel this order?</p>
+            <div>
+                <label for="cancelReason" class="block text-sm font-medium text-gray-700 mb-2">Reason (optional)</label>
+                <textarea
+                        id="cancelReason"
+                        pInputTextarea
+                        [(ngModel)]="cancelReason"
+                        rows="3"
+                        placeholder="Please provide a reason for cancellation..."
+                        class="w-full">
+          </textarea>
+            </div>
+        </div>
+        <ng-template pTemplate="footer">
+            <div class="flex justify-end gap-2">
+                <p-button
+                        label="Cancel Order"
+                        icon="pi pi-trash"
+                        severity="danger"
+                        (onClick)="confirmCancelOrder()">
+                </p-button>
+            </div>
+        </ng-template>
+    </p-dialog>
+
+    <!-- Remove Dialog -->
+    <p-dialog
+            header="Remove Order"
+            [(visible)]="removeOrderDialog"
+            [modal]="true"
+            [style]="{width: '400px'}"
+            styleClass="!m-2 !md:m-0">
+        <div class="space-y-4">
+            <p>Are you sure you want to remove this order?</p>
+        </div>
+        <ng-template pTemplate="footer">
+            <div class="flex justify-end gap-2">
+                <p-button
+                        label="Remove Order"
+                        severity="danger"
+                        (onClick)="confirmRemoveOrder()">
+                </p-button>
+            </div>
+        </ng-template>
+    </p-dialog>
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- Order Details Dialog -->
-<!--    <p-dialog-->
-<!--            header="Order Details"-->
-<!--            [(visible)]="showOrderDialog"-->
-<!--            [modal]="true"-->
-<!--            [closable]="true"-->
-<!--            [style]="{width: '800px'}"-->
-<!--            (onHide)="closeOrderDialog()"-->
-<!--            *ngIf="selectedOrder">-->
-
-<!--        <div class="order-details">-->
-<!--            <div class="order-header">-->
-<!--                <div class="order-info">-->
-<!--                    <h3>Order #{{ selectedOrder.id }}</h3>-->
-<!--                    <p>Placed on {{ formatDateTime(selectedOrder.createdAt) }}</p>-->
-<!--                </div>-->
-<!--                <div class="order-status">-->
-<!--                    <p-tag-->
-<!--                            [value]="getOrderStatusSeverity(selectedOrder.orderStatus)"-->
-<!--                            [severity]="getOrderStatusSeverity(selectedOrder.orderStatus)">-->
-<!--                    </p-tag>-->
-<!--                    <p-tag-->
-<!--                            [value]="selectedOrder.paymentStatus"-->
-<!--                            [severity]="getPaymentStatusSeverity(selectedOrder.paymentStatus)">-->
-<!--                    </p-tag>-->
-<!--                </div>-->
-<!--            </div>-->
-
-<!--            <p-divider></p-divider>-->
-
-<!--            <div class="order-items">-->
-<!--                <h4>Order Items</h4>-->
-<!--                <div class="item-list">-->
-<!--                    <div *ngFor="let item of selectedOrder.orderItems" class="order-item">-->
-<!--                        <div class="item-info">-->
-<!--                            <h5>{{ item.productName }}</h5>-->
-<!--                            <p>Quantity: {{ item.quantity }}</p>-->
-<!--                            <p>Price: {{ formatCurrency(item.unitPrice) }}</p>-->
-<!--                        </div>-->
-<!--                        <div class="item-total">-->
-<!--                            {{ formatCurrency(item.quantity * item.unitPrice) }}-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-
-<!--            <p-divider></p-divider>-->
-
-<!--            <div class="order-summary">-->
-<!--                <div class="summary-row">-->
-<!--                    <span>Subtotal:</span>-->
-<!--                    <span>{{ formatCurrency(selectedOrder.totalAmount - (selectedOrder.shipping || 0)) }}</span>-->
-<!--                </div>-->
-<!--                <div class="summary-row" *ngIf="selectedOrder.shipping">-->
-<!--                    <span>Shipping:</span>-->
-<!--                    <span>{{ formatCurrency(selectedOrder.shipping) }}</span>-->
-<!--                </div>-->
-<!--                <div class="summary-row total">-->
-<!--                    <strong>Total: {{ formatCurrency(selectedOrder.totalAmount) }}</strong>-->
-<!--                </div>-->
-<!--            </div>-->
-
-<!--            <div class="shipping-info" *ngIf="selectedOrder.shippingAddress">-->
-<!--                <h4>Shipping Address</h4>-->
-<!--                <address>-->
-<!--                    {{ selectedOrder.shippingAddress.address1 }}<br>-->
-<!--                    {{ selectedOrder.shippingAddress.city }}, {{ selectedOrder.shippingAddress.state }} {{ selectedOrder.shippingAddress.postalCode }}<br>-->
-<!--                    {{ selectedOrder.shippingAddress.country }}-->
-<!--                </address>-->
-<!--            </div>-->
-<!--        </div>-->
-
-<!--        <ng-template pTemplate="footer">-->
-<!--            <p-button-->
-<!--                    label="Close"-->
-<!--                    icon="pi pi-times"-->
-<!--                    class="p-button-text"-->
-<!--                    (click)="closeOrderDialog()">-->
-<!--            </p-button>-->
-<!--            <p-button-->
-<!--                    label="Download Receipt"-->
-<!--                    icon="pi pi-download"-->
-<!--                    (click)="downloadReceipt(selectedOrder)">-->
-<!--            </p-button>-->
-<!--        </ng-template>-->
-<!--    </p-dialog>-->
-
-<!-- Order Tracking Dialog -->
-<!--    <p-dialog-->
-<!--            header="Order Tracking"-->
-<!--            [(visible)]="showOrderTrackingDialog"-->
-<!--            [modal]="true"-->
-<!--            [closable]="true"-->
-<!--            [style]="{width: '600px'}"-->
-<!--            (onHide)="closeOrderTrackingDialog()"-->
-<!--            *ngIf="orderTrackingInfo">-->
-
-<!--        <div class="tracking-info">-->
-<!--            <p-timeline [value]="orderTrackingInfo.events" layout="vertical">-->
-<!--                <ng-template pTemplate="content" let-event>-->
-<!--                    <p-card>-->
-<!--                        <div class="tracking-event">-->
-<!--                            <h5>{{ event.status }}</h5>-->
-<!--                            <p>{{ event.description }}</p>-->
-<!--                            <small>{{ formatDateTime(event.timestamp) }}</small>-->
-<!--                            <p *ngIf="event.location"><strong>Location:</strong> {{ event.location }}</p>-->
-<!--                        </div>-->
-<!--                    </p-card>-->
-<!--                </ng-template>-->
-<!--            </p-timeline>-->
-
-<!--            <div class="tracking-number" *ngIf="orderTrackingInfo.trackingNumber">-->
-<!--                <h4>Tracking Number</h4>-->
-<!--                <p>{{ orderTrackingInfo.trackingNumber }}</p>-->
-<!--            </div>-->
-
-<!--            <div class="estimated-delivery" *ngIf="orderTrackingInfo.estimatedDelivery">-->
-<!--                <h4>Estimated Delivery</h4>-->
-<!--                <p>{{ formatDate(orderTrackingInfo.estimatedDelivery) }}</p>-->
-<!--            </div>-->
-<!--        </div>-->
-
-<!--        <ng-template pTemplate="footer">-->
-<!--            <p-button-->
-<!--                    label="Close"-->
-<!--                    icon="pi pi-times"-->
-<!--                    class="p-button-text"-->
-<!--                    (click)="closeOrderTrackingDialog()">-->
-<!--            </p-button>-->
-<!--        </ng-template>-->
-<!--    </p-dialog>-->

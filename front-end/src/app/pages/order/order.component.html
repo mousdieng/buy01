@@ -1,0 +1,433 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-3 sm:p-4 lg:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Enhanced Header with Glassmorphism -->
+        <div class="bg-white/80 border border-white/20 p-4 sm:p-6 lg:p-8 mb-6 duration-300">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
+                            <i class="pi pi-shopping-cart text-lg sm:text-xl"></i>
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                            Order Details
+                        </h1>
+                    </div>
+                    <p class="text-gray-600 text-sm sm:text-base ml-13 sm:ml-15" *ngIf="order">Order #{{order.id}}</p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3 lg:gap-4" *ngIf="order">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+                        <span class="text-sm font-medium text-gray-700 whitespace-nowrap">Order Status:</span>
+                        <p-tag
+                                [value]="order.status || 'UNKNOWN'"
+                                [severity]="getOrderStatusSeverity(order.status)"
+                                [rounded]="true"
+                                styleClass="px-4 py-2 text-sm font-semibold shadow-sm">
+                        </p-tag>
+                    </div>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100">
+                        <span class="text-sm font-medium text-gray-700 whitespace-nowrap">Payment Status:</span>
+                        <p-tag
+                                [value]="order.paymentStatus || 'UNKNOWN'"
+                                [severity]="getPaymentStatusSeverity(order.paymentStatus)"
+                                [rounded]="true"
+                                styleClass="px-4 py-2 text-sm font-semibold shadow-sm">
+                        </p-tag>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Loading State -->
+        <div *ngIf="ordersLoading" class="space-y-6">
+            <div class="bg-white/60 backdrop-blur-sm rounded-3xl shadow-lg border border-white/20 p-6">
+                <p-skeleton height="200px" styleClass="rounded-2xl"></p-skeleton>
+            </div>
+            <div class="bg-white/60 backdrop-blur-sm rounded-3xl shadow-lg border border-white/20 p-6">
+                <p-skeleton height="300px" styleClass="rounded-2xl"></p-skeleton>
+            </div>
+        </div>
+
+        <!-- Enhanced Order Content -->
+        <div *ngIf="!ordersLoading && order" class="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
+            <!-- Main Content -->
+            <div class="xl:col-span-2 space-y-6">
+                <!-- Enhanced Order Items -->
+                <div class="bg-white/80 border border-white/20 overflow-hidden">
+                    <div class="p-4 sm:p-6">
+                        <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-3">
+                            <i class="pi pi-box text-lg sm:text-xl"></i>
+                            Order Items
+                        </h2>
+                    </div>
+                    <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                        <div *ngFor="let item of order.fullOrderItem; let i = index"
+                             class="group relative overflow-hidden p-4 sm:p-6 border border-gray-100 hover:border-blue-200">
+
+                            <!-- Enhanced Product Layout -->
+                            <div class="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                <!-- Enhanced Product Image -->
+                                <div class="flex-shrink-0 mx-auto sm:mx-0">
+                                    <div class="relative overflow-hidden">
+                                        <img
+                                                [src]="getMedia(item.product.id, item.media[0].imagePath)"
+                                                [alt]="item.product.name"
+                                                class="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 object-cover transform group-hover:scale-105 transition-transform duration-300">
+                                        <div class="absolute inset-0"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Enhanced Product Info -->
+                                <div class="flex-grow space-y-3 sm:space-y-4 text-center sm:text-left">
+                                    <h3 class="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors duration-300">
+                                        {{item.product.name}}
+                                    </h3>
+                                    <p class="text-gray-600 text-sm sm:text-base leading-relaxed line-clamp-2">
+                                        {{item.product.description}}
+                                    </p>
+
+                                    <!-- Enhanced Seller Info -->
+                                    <div *ngIf="user?.role === 'CLIENT'" class="flex items-center justify-center sm:justify-start gap-3 p-3 bg-white/60 rounded-xl border border-gray-100">
+                                        <p-avatar *ngIf="!item.user.avatar"
+                                                  icon="pi pi-user"
+                                                  styleClass="profile-avatar"
+                                                  [style]="{ 'background-color': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }"
+                                                  shape="circle" />
+                                        <p-avatar *ngIf="item.user.avatar"
+                                                  image="{{environment.apiUrl}}user/avatar/{{item.user.avatar}}"
+                                                  styleClass="shadow-md"
+                                                  [style]="{ 'background-color': '#ece9fc', color: '#2a1261' }"
+                                                  shape="circle" />
+                                        <span class="text-sm text-gray-600">
+                                            Sold by <strong class="text-gray-900">{{item.user.name}}</strong>
+                                        </span>
+                                    </div>
+
+                                    <!-- Enhanced Quantity and Price -->
+                                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pt-2 border-t border-gray-200">
+                                        <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-center sm:text-left">
+                                            <div class="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-xl border border-blue-100">
+                                                <i class="pi pi-hashtag text-blue-600 text-xs"></i>
+                                                <span class="text-sm font-medium text-gray-700">Qty: <strong class="text-blue-700">{{getItemQuantity(item.product.id)}}</strong></span>
+                                            </div>
+                                            <div class="flex items-center gap-2 px-3 py-2 bg-emerald-50 rounded-xl border border-emerald-100">
+                                                <i class="pi pi-dollar text-emerald-600 text-xs"></i>
+                                                <span class="text-sm font-medium text-gray-700">Unit: <strong class="text-emerald-700">${{item.product.price}}</strong></span>
+                                            </div>
+                                        </div>
+                                        <div class="text-center sm:text-right">
+                                            <div class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                                ${{getItemTotalPrice(item.product.id)}}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Sidebar -->
+            <div class="space-y-4 lg:space-y-6">
+                <!-- Enhanced Order Summary -->
+                <div class="overflow-hidden bg-white">
+                    <div class="p-4 sm:p-6">
+                        <h3 class="text-lg sm:text-xl font-bold flex items-center gap-3">
+                            <i class="pi pi-calculator text-lg"></i>
+                            Order Summary
+                        </h3>
+                    </div>
+                    <div class="p-4 sm:p-6 space-y-4">
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span class="text-gray-600 font-medium">Subtotal:</span>
+                            <span class="font-bold text-gray-900">${{order.subtotal}}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span class="text-gray-600 font-medium">Shipping:</span>
+                            <span class="font-bold text-gray-900">${{order.shipping}}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span class="text-gray-600 font-medium">Tax:</span>
+                            <span class="font-bold text-gray-900">${{order.tax}}</span>
+                        </div>
+                        <div class="p-4 border border-blue-100">
+                            <div class="flex justify-between items-center text-lg sm:text-xl">
+                                <span class="font-bold text-gray-900">Total:</span>
+                                <span class="font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent text-xl sm:text-2xl">
+                                    ${{order.totalAmount}}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Customer Information -->
+                <div *ngIf="user?.role === 'SELLER'" class="bg-white overflow-hidden">
+                    <div class="p-4 sm:p-6">
+                        <h3 class="text-lg sm:text-xl font-bold flex items-center gap-3">
+                            <i class="pi pi-user text-lg"></i>
+                            Customer Information
+                        </h3>
+                    </div>
+                    <div class="p-4 sm:p-6">
+                        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                            <p-avatar
+                                    [image]="order.customer.avatar ||  ''"
+                                    [label]="!order.customer.avatar ? order.customer.name.charAt(0).toUpperCase() : undefined"
+                                    size="xlarge"
+                                    shape="circle"
+                                    styleClass="shadow-lg border-4 border-white"
+                                    [style]="{ 'background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }">
+                            </p-avatar>
+                            <div class="text-center sm:text-left space-y-2">
+                                <h4 class="text-xl sm:text-2xl font-bold text-gray-900">{{order.customer.name}}</h4>
+                                <div class="space-y-2">
+                                    <p class="text-gray-600 flex items-center justify-center sm:justify-start gap-2">
+                                        <i class="pi pi-envelope text-blue-500"></i>
+                                        <span class="break-all">{{order.customer.email}}</span>
+                                    </p>
+                                    <p class="text-gray-600 flex items-center justify-center sm:justify-start gap-2" *ngIf="order.phone">
+                                        <i class="pi pi-phone text-green-500"></i>
+                                        {{order.phone}}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Actions -->
+                <div *ngIf="canPerformActions()" class="bg-white overflow-hidden">
+                    <div class="p-4 sm:p-6">
+                        <h3 class="text-lg sm:text-xl font-bold flex items-center gap-3">
+                            <i class="pi pi-cog text-lg"></i>
+                            Actions
+                        </h3>
+                    </div>
+                    <div class="p-4 sm:p-6 flex flex-col gap-2">
+                        <p-button
+                                *ngIf="canCompleteOrder()"
+                                label="Complete Order"
+                                icon="pi pi-check-circle"
+                                severity="success"
+                                styleClass="w-full !rounded-2xl !py-3 !text-base !font-semibold !shadow-lg hover:!shadow-xl !transition-all !duration-300"
+                                (onClick)="completeOrder()">
+                        </p-button>
+                        <p-button
+                                *ngIf="canReOrder()"
+                                label="Reorder Items"
+                                icon="pi pi-refresh"
+                                severity="info"
+                                styleClass="w-full !rounded-2xl !py-3 !text-base !font-semibold !shadow-lg hover:!shadow-xl !transition-all !duration-300"
+                                (onClick)="showReOrderDialog()">
+                        </p-button>
+                        <p-button
+                                *ngIf="canCancelOrder()"
+                                label="Cancel Order"
+                                icon="pi pi-times-circle"
+                                severity="warn"
+                                styleClass="w-full !rounded-2xl !py-3 !text-base !font-semibold !shadow-lg hover:!shadow-xl !transition-all !duration-300"
+                                (onClick)="showCancelDialog()">
+                        </p-button>
+                        <p-button
+                                *ngIf="canRemoveOrder()"
+                                label="Remove Order"
+                                icon="pi pi-trash"
+                                severity="danger"
+                                styleClass="w-full !rounded-2xl !py-3 !text-base !font-semibold !shadow-lg hover:!shadow-xl !transition-all !duration-300"
+                                (onClick)="showRemoveOrderDialog()">
+                        </p-button>
+                    </div>
+                </div>
+
+                <!-- Enhanced Addresses -->
+                <div class="bg-white overflow-hidden">
+                    <div class="p-4 sm:p-6">
+                        <h3 class="text-lg sm:text-xl font-bold flex items-center gap-3">
+                            <i class="pi pi-map text-lg"></i>
+                            Addresses
+                        </h3>
+                    </div>
+                    <div class="p-4 sm:p-6 space-y-6">
+                        <div class="space-y-3">
+                            <h4 class="font-bold text-gray-900 flex items-center gap-2">
+                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="pi pi-map-marker text-blue-600 text-sm"></i>
+                                </div>
+                                Shipping Address
+                            </h4>
+                            <div class="bg-blue-50 rounded-2xl p-4 border border-blue-100" *ngIf="order.shippingAddress">
+                                <div class="text-sm text-gray-700 leading-relaxed space-y-1">
+                                    <p class="font-semibold text-gray-900">{{order.shippingAddress.fullName}}</p>
+                                    <p>{{order.shippingAddress.address1}}</p>
+                                    <p *ngIf="order.shippingAddress.address2">{{order.shippingAddress.address2}}</p>
+                                    <p>{{order.shippingAddress.location.city?.name}}, {{order.shippingAddress.location.state?.name}} {{order.shippingAddress.postalCode}}</p>
+                                    <p class="font-medium">{{order.shippingAddress.location.country?.name}}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+
+                        <div class="space-y-3">
+                            <h4 class="font-bold text-gray-900 flex items-center gap-2">
+                                <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                                    <i class="pi pi-credit-card text-emerald-600 text-sm"></i>
+                                </div>
+                                Billing Address
+                            </h4>
+                            <div class="bg-emerald-50 rounded-2xl p-4 border border-emerald-100" *ngIf="order.billingAddress">
+                                <div class="text-sm text-gray-700 leading-relaxed space-y-1">
+                                    <p class="font-semibold text-gray-900">{{order.billingAddress.fullName}}</p>
+                                    <p>{{order.billingAddress.address1}}</p>
+                                    <p *ngIf="order.billingAddress.address2">{{order.billingAddress.address2}}</p>
+                                    <p>{{order.billingAddress.location.city?.name}}, {{order.billingAddress.location.state?.name}} {{order.billingAddress.postalCode}}</p>
+                                    <p class="font-medium">{{order.billingAddress.location.country?.name}}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Order Timeline -->
+                <div *ngIf="order.statusHistory && order.statusHistory.length > 0" class="bg-white overflow-hidden">
+                    <div class="p-4 sm:p-6">
+                        <h3 class="text-lg sm:text-xl font-bold flex items-center gap-3">
+                            <i class="pi pi-clock text-lg"></i>
+                            Order Timeline
+                        </h3>
+                    </div>
+                    <div class="p-4 sm:p-6">
+                        <p-timeline
+                                [value]="order.statusHistory"
+                                layout="vertical"
+                                align="alternate"
+                                styleClass="customized-timeline">
+                            <ng-template pTemplate="content" let-event>
+                                <div class="p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
+                                    <p class="font-bold text-gray-900 text-sm sm:text-base">{{event.status}}</p>
+                                    <p class="text-xs sm:text-sm text-gray-500 mt-2 flex items-center gap-2">
+                                        <i class="pi pi-calendar text-gray-400"></i>
+                                        {{event.timestamp | date:'medium'}}
+                                    </p>
+                                </div>
+                            </ng-template>
+                        </p-timeline>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Error State -->
+        <div *ngIf="!ordersLoading && !order" class="text-center py-16 sm:py-20">
+            <div class="max-w-md mx-auto space-y-6">
+                <div class="w-24 h-24 sm:w-32 sm:h-32 mx-auto bg-gradient-to-r from-red-100 to-orange-100 rounded-full flex items-center justify-center">
+                    <i class="pi pi-exclamation-triangle text-4xl sm:text-6xl text-red-500"></i>
+                </div>
+                <div class="space-y-3">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Order Not Found</h2>
+                    <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+                        The requested order could not be found or you don't have permission to view it.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Cancel Dialog -->
+<p-dialog
+        header="Cancel Order"
+        [(visible)]="showCancelOrderDialog"
+        [modal]="true"
+        [style]="{width: '90vw', maxWidth: '500px'}"
+        styleClass="!m-2 !md:m-0"
+        [contentStyle]="{'border-radius': '24px'}">
+    <div class="space-y-6 p-2">
+        <div class="text-center space-y-3">
+            <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                <i class="pi pi-exclamation-triangle text-red-500 text-2xl"></i>
+            </div>
+            <p class="text-lg font-semibold text-gray-900">Are you sure you want to cancel this order?</p>
+        </div>
+        <div class="space-y-2">
+            <label for="cancelReason" class="block text-sm font-semibold text-gray-700">Reason (optional)</label>
+            <textarea
+                    id="cancelReason"
+                    pInputTextarea
+                    [(ngModel)]="cancelReason"
+                    rows="4"
+                    placeholder="Please provide a reason for cancellation..."
+                    class="w-full !rounded-2xl !border-gray-200 focus:!border-blue-500 focus:!ring-2 focus:!ring-blue-200">
+            </textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <div class="flex flex-col sm:flex-row justify-end gap-3 p-2">
+            <p-button
+                    label="Keep Order"
+                    severity="secondary"
+                    styleClass="!rounded-2xl !py-3 !px-6 !font-semibold order-2 sm:order-1">
+            </p-button>
+            <p-button
+                    label="Cancel Order"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    styleClass="!rounded-2xl !py-3 !px-6 !font-semibold order-1 sm:order-2"
+                    (onClick)="confirmCancelOrder()">
+            </p-button>
+        </div>
+    </ng-template>
+</p-dialog>
+
+<!-- Enhanced Remove Dialog -->
+<p-dialog
+        header="Remove Order"
+        [(visible)]="removeOrderDialog"
+        [modal]="true"
+        [style]="{width: '90vw', maxWidth: '450px'}"
+        styleClass="!m-2 !md:m-0"
+        [contentStyle]="{'border-radius': '24px'}">
+    <div class="space-y-6 p-2">
+        <div class="text-center space-y-3">
+            <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                <i class="pi pi-trash text-red-500 text-2xl"></i>
+            </div>
+            <p class="text-lg font-semibold text-gray-900">Are you sure you want to remove this order?</p>
+            <p class="text-sm text-gray-600">This action cannot be undone.</p>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <div class="flex flex-col sm:flex-row justify-end gap-3 p-2">
+            <p-button
+                    label="Keep Order"
+                    severity="secondary"
+                    styleClass="!rounded-2xl !py-3 !px-6 !font-semibold order-2 sm:order-1"
+                    (onClick)="hideRemoveOrderDialog()">
+            </p-button>
+            <p-button
+                    label="Remove Order"
+                    severity="danger"
+                    styleClass="!rounded-2xl !py-3 !px-6 !font-semibold order-1 sm:order-2"
+                    (onClick)="confirmRemoveOrder()">
+            </p-button>
+        </div>
+    </ng-template>
+</p-dialog>
+
+<!-- Enhanced Re-Order Dialog -->
+<p-dialog
+        header="Re-Order Items"
+        [(visible)]="reOrderDialog"
+        [modal]="true"
+        [style]="{width: '95vw', maxWidth: '800px'}"
+        styleClass="!m-2 !md:m-4"
+        [contentStyle]="{'border-radius': '24px', 'max-height': '80vh', 'overflow-y': 'auto'}">
+    <div class="p-2">
+        <app-order-form [isReOrdering]="true" [order]="order" [isInCheckout]="false" />
+    </div>
+</p-dialog>
+
+<p-confirmDialog></p-confirmDialog>
+<p-toast></p-toast>

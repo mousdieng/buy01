@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import { AvatarModule } from 'primeng/avatar';
 import { CommonModule } from '@angular/common';
 import {ACTION, PaginatedResponse, Product, ProductMedia, ToastMessage, UserPayload} from '../../types';
@@ -26,6 +26,7 @@ import {ToastModule} from "primeng/toast";
 import {Router} from "@angular/router";
 import {TextPreviewComponent} from "../../components/text-preview/text-preview.component";
 import {Paginator, PaginatorState} from "primeng/paginator";
+import {environment} from "../../environment";
 
 @Component({
     selector: 'app-dashboard',
@@ -39,7 +40,7 @@ import {Paginator, PaginatorState} from "primeng/paginator";
     styleUrl: './dashboard.component.css',
     providers: [MessageService] // Ensure MessageService is provided here
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
     readonly ACTION = ACTION;
     user$: Observable<UserPayload>;
     products: PaginatedResponse<ProductMedia> | null = null;
@@ -62,7 +63,7 @@ export class DashboardComponent {
     }
 
     getMedia(productId: string, mediaPath: string): string {
-        return `https://localhost:8082/api/v1/media/${productId}/${mediaPath}`
+        return `${environment.apiUrl}media/${productId}/${mediaPath}`
     }
 
     loadProducts(): void {
@@ -145,4 +146,5 @@ export class DashboardComponent {
     }
 
     protected readonly Math = Math;
+    protected readonly environment = environment;
 }

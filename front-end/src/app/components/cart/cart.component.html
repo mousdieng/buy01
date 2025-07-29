@@ -1,0 +1,173 @@
+
+<!-- Enhanced Shopping Cart Icon with Animation -->
+<i class="pi pi-shopping-cart text-xl" pBadge [value]="cart?.items?.length || 0" (click)="cartService.toggleCart($event)"></i>
+
+
+<!-- Enhanced Cart Overlay with Better Animations -->
+<div [ngClass]="{'hidden': !cartService.showCart()}" 
+     (click)="cartService.toggleCart($event)"
+     class="w-full top-full h-screen max-w-7xl duration-500 transform left-1/2 -translate-x-1/2
+       fixed inset-0 bg-black bg-opacity-60 backdrop-blur-lg transition-all ease-out z-50" 
+     aria-hidden="true">
+    
+    <!-- Enhanced Cart Panel with Glassmorphism Effect -->
+    <div [ngClass]="{ 'translate-y-0 opacity-100 scale-100': cartService.showCart(), 
+                      '-translate-y-full opacity-0 scale-95': !cartService.showCart() }"
+         class="absolute bg-white/95 backdrop-blur-xl w-full desktop:w-1/3 py-6 px-2
+                transform transition-all duration-500 ease-out right-0 shadow-2xl
+                border-l border-gray-200/50"
+         (click)="$event.stopPropagation()">
+        
+        <!-- Cart Header with Close Button -->
+        <div class="flex items-center justify-between px-6 pb-4 border-b border-gray-100">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                Your bag
+            </h1>
+            <button (click)="cartService.toggleCart($event)" 
+                    class="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200">
+                <i class="pi pi-times text-gray-500 hover:text-gray-700"></i>
+            </button>
+        </div>
+
+        <div *ngIf="cartService.showCart()" class="px-4">
+            
+            <!-- Enhanced Loading State -->
+            <div *ngIf="loading" class="flex flex-col justify-center items-center py-20">
+                <div class="relative">
+                    <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    <div class="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-purple-600 rounded-full animate-spin animation-delay-150"></div>
+                </div>
+                <p class="mt-4 text-gray-600 font-medium">Loading your cart...</p>
+            </div>
+
+            <!-- Enhanced Empty Cart State -->
+            <div *ngIf="!loading && (!cart || cart.items.length === 0)" class="text-center py-16">
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-8 mx-4 shadow-lg">
+                    <div class="mb-6">
+                        <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="pi pi-shopping-cart text-4xl text-gray-400"></i>
+                        </div>
+                        <div class="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mx-auto"></div>
+                    </div>
+                    
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3">Your cart is empty</h3>
+                    <p class="text-gray-500 mb-8 text-lg">Discover amazing products and start shopping!</p>
+
+                    <p-button
+                            label="Continue Shopping"
+                            icon="pi pi-arrow-left"
+                            (click)="continueShopping()"
+                            styleClass="">
+                    </p-button>
+                </div>
+            </div>
+
+            <!-- Enhanced Cart Items -->
+            <div *ngIf="!loading && cart && cart.items.length > 0" class="space-y-6">
+
+                <!-- Enhanced Cart Items List -->
+                <div class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar px-2">
+                    <div *ngFor="let item of cart.items; trackBy: trackByCartItem"
+                         class="bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg
+                                hover:border-blue-200 transition-all duration-300 transform hover:scale-[1.02]">
+
+                        <div class="flex items-center space-x-4">
+                            <!-- Enhanced Product Image -->
+                            <div class="relative flex-shrink-0">
+                                <img [src]="getProductImage(item.item.product.id, item.item.media)"
+                                     [alt]="item.item.product.name"
+                                     class="w-20 h-20 object-cover rounded-xl shadow-md">
+                                <div class="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-green-400 to-blue-500
+                                           rounded-full flex items-center justify-center">
+                                    <span class="text-white text-xs font-bold">{{ item.quantity }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Product Details -->
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-gray-900 mb-1 truncate">{{ item.item.product.name }}</h3>
+                                <p class="text-sm text-gray-600 mb-2 line-clamp-2">{{ item.item.product.description }}</p>
+
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4">
+                                        <span class="text-lg font-bold text-gray-900">
+                                            ${{ item.price | number:'1.2-2' }}
+                                        </span>
+                                        <span class="text-sm text-gray-500">
+                                            Stock: {{ item.item.product.quantity }}
+                                        </span>
+                                    </div>
+
+                                    <div class="text-xs text-gray-400">
+                                        {{ item.addedAt | date:'short' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced Quantity Controls -->
+                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                            <div class="flex items-center space-x-3">
+                                <button (click)="decreaseQuantity(item)"
+                                        [disabled]="item.quantity <= 1"
+                                        class="w-8 h-8 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed
+                                               rounded-full flex items-center justify-center transition-colors duration-200">
+                                    <i class="pi pi-minus text-sm"></i>
+                                </button>
+
+                                <span class="text-lg font-semibold min-w-[2rem] text-center py-2 px-3 bg-gray-50 rounded-lg">
+                                    {{ item.quantity }}
+                                </span>
+
+                                <button (click)="increaseQuantity(item)"
+                                        [disabled]="item.quantity >= item.item.product.quantity"
+                                        class="w-8 h-8 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed
+                                               rounded-full flex items-center justify-center transition-colors duration-200">
+                                    <i class="pi pi-plus text-sm"></i>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center space-x-4">
+                                <div class="text-right">
+                                    <p class="text-lg font-bold text-gray-900">
+                                        ${{ (item.price * item.quantity) | number:'1.2-2' }}
+                                    </p>
+                                    <p class="text-xs text-gray-500">Total</p>
+                                </div>
+
+                                <button (click)="removeItem(item)"
+                                        class="w-8 h-8 bg-red-50 hover:bg-red-100 text-red-600 rounded-full
+                                               flex items-center justify-center transition-colors duration-200 group">
+                                    <i class="pi pi-trash text-sm group-hover:scale-110 transition-transform duration-200"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cart Items Header -->
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 mx-2">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            <i class="pi pi-list mr-2 text-blue-600"></i>
+                            Cart Items ({{ cart.totalItems }})
+                        </h2>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-600">Total:</span>
+                            <span class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                ${{ cart.totalAmount | number:'1.2-2' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                    <a routerLink="/cart" routerLinkActive="active" ariaCurrentWhenActive="page"
+                       (click)="cartService.toggleCart($event)"
+                       class="cursor-pointer bg-indigo-600 w-full hover:bg-indigo-700 text-white px-8 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                        <i class="pi pi-shopping-cart mr-2"></i>
+                        View cart
+                    </a>
+            </div>
+        </div>
+    </div>
+</div>

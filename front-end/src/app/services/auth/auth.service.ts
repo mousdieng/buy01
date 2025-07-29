@@ -103,26 +103,7 @@ export class AuthService {
     }
 
     logout(): void {
-        // Optional: send a logout request to the server to invalidate the token
-        const token = this.tokenService.token;
-        if (token) {
-            this.http.post<ApiResponse<any>>(
-                `${this.API_URL}/auth/logout`,
-                { refreshToken: token.refreshToken },
-                { headers: new HttpHeaders({ 'Authorization': `Bearer ${token.accessToken}` }) }
-            ).pipe(
-                finalize(() => {
-                    this.clearUserState();
-                })
-            ).subscribe({
-                error: err => {
-                    console.error('Error during logout:', err);
-                    this.clearUserState();
-                }
-            });
-        } else {
-            this.clearUserState();
-        }
+        this.clearUserState();
     }
 
     private clearUserState(): void {

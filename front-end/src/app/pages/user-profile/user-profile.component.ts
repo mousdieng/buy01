@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {CommonModule, NgOptimizedImage} from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Observable, Subject, takeUntil, BehaviorSubject, combineLatest, debounceTime, distinctUntilChanged, finalize } from 'rxjs';
 
@@ -37,15 +37,19 @@ import {
     PaymentStatus,
     Role,
     PaginatedResponse,
-    UserStatisticsDTO, SellerStatisticsDTO, ApiResponse
+    UserStatisticsDTO, SellerStatisticsDTO, ApiResponse, Media
 } from '../../types';
-import { OrderService } from "../../services/order/order.service";
+import {CancelOrderRequest, OrderService} from "../../services/order/order.service";
 import { AuthService } from "../../services/auth/auth.service";
 import {Router, RouterLink, RouterLinkActive} from '@angular/router';
 import { OrderSearchParams } from "../../services/order/order.service";
 import { environment } from "../../environment";
 import { UserService } from '../../services/user/user.service';
 import {FileData, FileService} from "../../services/file-service/file-service.service";
+import {Image} from "primeng/image";
+import {OrderFormComponent} from "../../components/order-form/order-form.component";
+import {InputTextarea} from "primeng/inputtextarea";
+import {CheckoutService} from "../../services/checkout/checkout.service";
 
 @Component({
     selector: 'app-profile',
@@ -80,7 +84,10 @@ import {FileData, FileService} from "../../services/file-service/file-service.se
         RippleModule,
         TooltipModule,
         RouterLink,
-        RouterLinkActive
+        RouterLinkActive,
+        Image,
+        OrderFormComponent,
+        InputTextarea
     ],
     providers: [MessageService, ConfirmationService],
     templateUrl: './user-profile.component.html',
@@ -105,6 +112,13 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     loading = false;
     statsLoading = false;
     ordersLoading = false;
+    reOrderDialog: boolean = false;
+    selectedOrder: Order | null = null;
+
+    showCancelOrderDialog: boolean = false;
+    cancelReason: string = '';
+
+    removeOrderDialog: boolean = false;
 
     // Pagination
     currentPage = 0;
@@ -139,9 +153,10 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         private confirmationService: ConfirmationService,
         private orderService: OrderService,
         private authService: AuthService,
-        public router: Router,
+        public route: Router,
         private userService: UserService,
         private fileService: FileService,
+        private checkoutService: CheckoutService
     ) {
         this.user$ = this.authService.userState$;
         this.editProfileForm = this.createEditProfileForm();
@@ -161,6 +176,11 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next();
         this.destroy$.complete();
+    }
+
+    getMedia(id: string, media: Media[] | undefined): string {
+        if (!media?.length) return ''
+        return `${environment.apiUrl}media/${id}/${media[0]?.imagePath}`;
     }
 
     private createEditProfileForm(): FormGroup {
@@ -327,6 +347,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
             )
             .subscribe({
                 next: (response: ApiResponse<PaginatedResponse<Order>>) => {
+                    console.log("response", response)
                     this.orders = response.data.content;
                     this.filteredOrders = response.data.content;
                     this.totalOrders = response.data.page.totalElements;
@@ -382,68 +403,6 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         return severities[status] || 'secondary';
     }
 
-    reorderOrder(order: Order): void {
-        this.confirmationService.confirm({
-            message: `Do you want to reorder items from order #${order.id}?`,
-            header: 'Confirm Reorder',
-            icon: 'pi pi-shopping-cart',
-            accept: () => {
-                this.orderService.reorderFromOrder(order.id)
-                    .pipe(takeUntil(this.destroy$))
-                    .subscribe({
-                        next: (response) => {
-                            this.messageService.add({
-                                severity: 'success',
-                                summary: 'Reorder Successful',
-                                detail: 'Items have been added to your cart. Redirecting to checkout...'
-                            });
-                            setTimeout(() => this.router.navigate(['/checkout']), 1500);
-                        },
-                        error: (error) => {
-                            this.messageService.add({
-                                severity: 'error',
-                                summary: 'Reorder Failed',
-                                detail: 'Unable to reorder at this time. Please try again.'
-                            });
-                        }
-                    });
-            }
-        });
-    }
-
-    cancelOrder(order: Order): void {
-        this.confirmationService.confirm({
-            message: `Are you sure you want to cancel order #${order.id}?`,
-            header: 'Confirm Cancellation',
-            icon: 'pi pi-exclamation-triangle',
-            accept: () => {
-                const cancelRequest = {
-                    orderId: order.id,
-                    reason: 'Customer requested cancellation'
-                };
-
-                this.orderService.cancelOrder(cancelRequest)
-                    .pipe(takeUntil(this.destroy$))
-                    .subscribe({
-                        next: (updatedOrder) => {
-                            this.messageService.add({
-                                severity: 'success',
-                                summary: 'Order Cancelled',
-                                detail: `Order #${order.id} has been cancelled successfully.`
-                            });
-                            this.searchOrders();
-                        },
-                        error: (error) => {
-                            this.messageService.add({
-                                severity: 'error',
-                                summary: 'Cancellation Failed',
-                                detail: 'Unable to cancel order. Please contact support.'
-                            });
-                        }
-                    });
-            }
-        });
-    }
 
     deleteOrder(order: Order): void {
         this.confirmationService.confirm({
@@ -473,30 +432,6 @@ export class UserProfileComponent implements OnInit, OnDestroy {
                     });
             }
         });
-    }
-
-    downloadReceipt(order: Order): void {
-        this.orderService.getOrderReceipt(order.id)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-                next: (blob) => {
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `receipt-${order.id}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                },
-                error: (error) => {
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Download Failed',
-                        detail: 'Unable to download receipt. Please try again.'
-                    });
-                }
-            });
     }
 
     saveEditProfile(): void {
@@ -625,7 +560,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
                             // Logout and redirect to home
                             setTimeout(() => {
                                 this.authService.logout();
-                                this.router.navigate(['/']);
+                                this.route.navigate(['/']);
                             }, 2000);
                         },
                         error: (error) => {
@@ -678,14 +613,125 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         return '';
     }
 
-    canCancelOrder(order: Order): boolean {
-        const cancellableStatuses = [OrderStatus.PENDING];
-        return cancellableStatuses.includes(order.status);
+    showReOrderDialog(order: Order): void {
+        this.reOrderDialog = true;
+        this.selectedOrder = order;
     }
 
-    canReorder(order: Order): boolean {
-        return order.status !== OrderStatus.CANCELLED;
+    completeOrder(order: Order) {
+        this.checkoutService.updateState({
+            selectedOrder: order,
+            isFormNeeded: false
+        })
+        this.route.navigate(['/checkout']);
     }
+
+    showCancelDialog(order: Order): void {
+        this.showCancelOrderDialog = true;
+        this.cancelReason = '';
+        this.selectedOrder = order;
+    }
+
+
+    hideCancelDialog(): void {
+        this.showCancelOrderDialog = false;
+        this.cancelReason = '';
+        this.selectedOrder = null;
+    }
+
+    hideRemoveOrderDialog(): void {
+        this.removeOrderDialog = false;
+        this.selectedOrder = null;
+    }
+
+    showRemoveOrderDialog(order: Order): void {
+        this.removeOrderDialog = true;
+        this.selectedOrder = order;
+    }
+
+    confirmCancelOrder(): void {
+        this.confirmationService.confirm({
+            message: 'This action cannot be undone. Are you sure you want to cancel this order?',
+            header: 'Confirm Cancellation',
+            icon: 'pi pi-exclamation-triangle',
+            acceptButtonStyleClass: 'p-button-danger',
+            accept: () => {
+                if (!this.selectedOrder || !this.selectedOrder?.id) {
+                    this.messageService.add({
+                        severity: 'warn',
+                        summary: 'Order Removed',
+                        detail: 'Your order has been successfully remove.'
+                    });
+                    return;
+                }
+                const cancelRequest: CancelOrderRequest = {
+                    orderId: this.selectedOrder?.id,
+                    reason: this.cancelReason
+                }
+                this.orderService.cancelOrder(cancelRequest)
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe({
+                        next: (order) => {
+                            this.messageService.add({
+                                severity: 'success',
+                                summary: 'Order Cancelled',
+                                detail: 'Your order has been successfully cancelled.'
+                            });
+                        },
+                        error: (err) => {
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Order Cancelled Failed',
+                                detail: "something went wrong"
+                            });
+                        }
+                    });
+
+                this.hideCancelDialog();
+            }
+        });
+    }
+
+    confirmRemoveOrder(): void {
+        this.confirmationService.confirm({
+            message: 'This action cannot be undone. Are you sure you want to cancel this order?',
+            header: 'Confirm removing',
+            icon: 'pi pi-exclamation-triangle',
+            acceptButtonStyleClass: 'p-button-danger',
+            accept: () => {
+                if (!this.selectedOrder || !this.selectedOrder?.id) {
+                    this.messageService.add({
+                        severity: 'warn',
+                        summary: 'Order Removed',
+                        detail: 'Your order has been successfully remove.'
+                    });
+                    return;
+                }
+
+                this.orderService.deleteOrder(this.selectedOrder.id)
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe({
+                        next: (order) => {
+                            this.messageService.add({
+                                severity: 'success',
+                                summary: 'Order Removed',
+                                detail: 'Your order has been successfully remove.'
+                            });
+                        },
+                        error: (err) => {
+                            this.messageService.add({
+                                severity: 'error',
+                                summary: 'Order Removed Failed',
+                                detail: "something went wrong"
+                            });
+                        }
+                    });
+
+                this.hideCancelDialog();
+            }
+        });
+    }
+
 
     // Format helpers
     formatCurrency(amount: number): string {
@@ -721,9 +767,17 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         return this.userStats as UserStatisticsDTO;
     }
 
+    isClient(): boolean {
+        if (!this.user) return false;
+        return this.user.role == Role.CLIENT && this.user.isAuthenticated;
+    }
+
     getSellerStats(): SellerStatisticsDTO {
         return this.userStats as SellerStatisticsDTO;
     }
 
     protected readonly environment = environment;
+    protected readonly Math = Math;
+    OrderStatus =  OrderStatus;
+
 }

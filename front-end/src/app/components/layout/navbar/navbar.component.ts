@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener } from '@angular/core';
+import {Component, HostListener, OnInit} from '@angular/core';
 import {NavigationEnd, Router, RouterLink, RouterLinkActive} from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
@@ -19,7 +19,7 @@ import {CartComponent} from "../../cart/cart.component";
   styleUrls: ['./navbar.component.css']
 })
 
-export class NavbarComponent {
+export class NavbarComponent implements OnInit {
   isMenuOpen = false;
   user: UserPayload = { id: '', name: '', email: '', avatar: null, role: null, isAuthenticated: false };
   cartCount = 0;
@@ -27,8 +27,9 @@ export class NavbarComponent {
 
   constructor(
       private router: Router,
-      // private cartService: CartService,
-      private authService: AuthService) {
+      private authService: AuthService,
+      private cartService: CartService,
+      ) {
     this.router.events
         .pipe(filter(event => event instanceof NavigationEnd))
         .subscribe((event: any) => {
@@ -38,10 +39,6 @@ export class NavbarComponent {
   }
 
   ngOnInit(): void {
-    // this.cartService.cart$.subscribe((cartItems) => {
-    //   // this.cartCount = cartItems.length;
-    // });
-
     this.authService.userState$.subscribe((u) => {
       this.user = u;
     });
@@ -50,6 +47,7 @@ export class NavbarComponent {
   toggleMenu(event: Event) {
     event.stopPropagation();
     this.isMenuOpen = !this.isMenuOpen;
+    if (this.isMenuOpen) this.cartService.hideCart()
 
     // Handle body scrolling
     if (this.isMenuOpen) {

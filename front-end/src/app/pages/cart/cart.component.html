@@ -1,0 +1,193 @@
+<div class="w-full min-h-screen bg-gradient-to-b from-indigo-50 to-white">
+    <div class="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
+        <div class="mb-6 sm:mb-8">
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mt-2 sm:mt-4">Your Shopping Cart</h1>
+            <p class="text-gray-500 mt-2 text-sm sm:text-base md:text-lg">Review and manage your items before checkout</p>
+        </div>
+
+        <!-- Empty Cart -->
+        <p-card *ngIf="!cart || cart.items.length === 0" class="shadow-xl rounded-2xl text-center">
+            <ng-template pTemplate="header">
+                <div class="p-4 sm:p-6">
+                    <i class="pi pi-shopping-cart text-4xl sm:text-5xl md:text-6xl text-gray-300 mb-3 sm:mb-4"></i>
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-600 mb-2">Your cart is empty</h3>
+                    <p class="text-sm sm:text-base text-gray-500">Add some items to your cart to get started</p>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="footer">
+                <div class="p-4 sm:p-6">
+                    <p-button
+                            label="Continue Shopping"
+                            icon="pi pi-arrow-left"
+                            (click)="router.navigate(['/products'])"
+                            styleClass="w-full sm:w-auto">
+                    </p-button>
+                </div>
+            </ng-template>
+        </p-card>
+
+        <!-- Cart Content -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            <!-- Cart Items -->
+            <div class="xl:col-span-2">
+                <!-- Cart Items Card -->
+                <p-card *ngIf="cart && cart.items.length > 0" class="shadow-xl rounded-2xl overflow-hidden">
+                    <ng-template pTemplate="header">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 sm:p-6 border-b border-gray-100 gap-3 sm:gap-0">
+                            <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Your Items ({{cart.items.length}})</h2>
+                            <p-button
+                                    label="Clear Cart"
+                                    icon="pi pi-trash"
+                                    severity="danger"
+                                    [outlined]="true"
+                                    size="small"
+                                    [disabled]="loading"
+                                    (click)="clearCart()"
+                                    styleClass="w-full sm:w-auto">
+                            </p-button>
+                        </div>
+                    </ng-template>
+
+                    <div class="space-y-3 sm:space-y-4">
+                        <div *ngFor="let item of cart.items" class="p-3 sm:p-4 hover:bg-gray-50 transition-colors duration-200">
+                            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                                <!-- Product Image -->
+                                <div class="flex-shrink-0 relative self-center sm:self-start">
+                                    <p-image
+                                            [src]="getProductImage(item.item.product.id, item.item.media)"
+                                            [alt]="item.item.product.name"
+                                            imageClass="w-20 h-20 sm:w-16 sm:h-16 md:w-20 md:h-20 object-cover rounded-lg" />
+                                </div>
+
+                                <!-- Product Details -->
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-4">
+                                        <div class="flex-1 min-w-0">
+                                            <h3 class="text-base sm:text-lg font-semibold text-gray-900 truncate">{{ item.item.product.name }}</h3>
+                                            <p class="text-gray-600 text-sm mb-2 line-clamp-2">{{ item.item.product.description }}</p>
+                                        </div>
+                                        <div class="flex-shrink-0 text-right sm:text-left">
+                                            <span class="text-lg sm:text-xl font-bold text-gray-900">${{ item.price }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Quantity Controls -->
+                                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mt-3">
+                                        <div class="flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-3">
+                                            <div class="flex items-center">
+                                                <p-inputNumber
+                                                        [showButtons]="true"
+                                                        [inputId]="'qty-' + item.id"
+                                                        [(ngModel)]="item.quantity"
+                                                        [min]="1"
+                                                        [max]="item.item.product.quantity"
+                                                        (onBlur)="updateQuantity(item.id, item.quantity)"
+                                                        buttonLayout="horizontal"
+                                                        incrementButtonIcon="pi pi-plus"
+                                                        decrementButtonIcon="pi pi-minus"
+                                                        styleClass="w-full sm:!w-20 md:!w-24 lg:!w-28"
+                                                        [disabled]="loading">
+                                                </p-inputNumber>
+                                            </div>
+                                            <span class="text-xs sm:text-sm text-gray-500">Available: {{item.item.product.quantity}}</span>
+                                        </div>
+
+                                        <!-- Actions -->
+                                        <div class="flex items-center justify-end sm:justify-start">
+                                            <p-button
+                                                    icon="pi pi-trash"
+                                                    severity="danger"
+                                                    [text]="true"
+                                                    [rounded]="true"
+                                                    size="small"
+                                                    (click)="removeItem(item.id)"
+                                                    [disabled]="loading"
+                                                    pTooltip="Remove item">
+                                            </p-button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </p-card>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="xl:col-span-1" *ngIf="cart && cart.items.length > 0">
+                <div class="sticky top-4 sm:top-6">
+                    <p-card class="shadow-xl rounded-2xl">
+                        <ng-template pTemplate="header">
+                            <div class="p-4 sm:p-6 pb-0">
+                                <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Order Summary</h2>
+                            </div>
+                        </ng-template>
+
+                        <!-- Summary Items -->
+                        <div class="space-y-3 sm:space-y-4 mb-4 sm:mb-6 px-4 sm:px-6">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm sm:text-base text-gray-600">Subtotal ({{cart.items.length}} items)</span>
+                                <span class="text-sm sm:text-base font-semibold text-gray-900">${{ getSubtotal().toFixed(2) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm sm:text-base text-gray-600">Estimated Tax</span>
+                                <span class="text-sm sm:text-base font-semibold text-gray-900">${{ 10 }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm sm:text-base text-gray-600">Shipping</span>
+                                <span class="text-sm sm:text-base font-semibold text-orange-500">
+                                    {{ 100 }}
+                                </span>
+                            </div>
+                            <p-divider></p-divider>
+                            <div class="flex justify-between items-center">
+                                <span class="text-base sm:text-lg font-bold text-gray-900">Total</span>
+                                <span class="text-lg sm:text-xl font-bold text-gray-900">${{ getTotal().toFixed(2) }}</span>
+                            </div>
+                        </div>
+
+                        <ng-template pTemplate="footer">
+                            <div class="p-4 sm:p-6 pt-0">
+                                <!-- Checkout Button -->
+                                <p-button
+                                        label="Proceed to Checkout"
+                                        icon="pi pi-lock"
+                                        styleClass="w-full mb-4 sm:mb-6"
+                                        [disabled]="loading"
+                                        (click)="proceedToCheckout()">
+                                </p-button>
+
+                                <!-- Secure Payment Info -->
+                                <div class="text-center mb-4 sm:mb-6">
+                                    <div class="flex justify-center items-center gap-2 mb-2">
+                                        <i class="pi pi-shield text-green-500"></i>
+                                        <span class="text-xs sm:text-sm text-gray-600">Secure Checkout</span>
+                                    </div>
+                                    <div class="flex justify-center gap-2 sm:gap-4">
+                                        <i class="pi pi-cc-visa text-xl sm:text-2xl text-gray-400"></i>
+                                        <i class="pi pi-cc-mastercard text-xl sm:text-2xl text-gray-400"></i>
+                                        <i class="pi pi-cc-amex text-xl sm:text-2xl text-gray-400"></i>
+                                        <i class="pi pi-cc-paypal text-xl sm:text-2xl text-gray-400"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Delivery Estimate -->
+                                <p-card class="shadow-sm border-0 bg-blue-50">
+                                    <div class="flex items-start gap-2 sm:gap-3">
+                                        <i class="pi pi-clock text-blue-500 mt-1 text-sm sm:text-base"></i>
+                                        <div class="flex-1 min-w-0">
+                                            <h4 class="text-sm sm:text-base font-semibold text-gray-800 mb-1">Delivery Estimate</h4>
+                                            <p class="text-xs sm:text-sm text-gray-600">
+                                                <span class="font-medium">In order to simplify things the delivery is considered by the time the payment has been confirmed.</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </p-card>
+                            </div>
+                        </ng-template>
+                    </p-card>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

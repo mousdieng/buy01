@@ -72,10 +72,8 @@
                        (click)="toggleMenu($event)"
                     >Media Management</a>
                 </li>
-                <li class="h-fit py-7 tablet:hidden">
-                    <a routerLink="/" routerLinkActive="active" ariaCurrentWhenActive="page" class="card justify-content-center px-4">
-                        <i class="pi pi-shopping-cart text-xl" pBadge [value]="cartCount"></i>
-                    </a>
+                <li class="h-fit py-7 tablet:hidden" *ngIf="user.isAuthenticated && user.role === 'CLIENT'">
+                    <app-cart/>
                 </li>
 
                 <li *ngIf="user.isAuthenticated" class="h-fit">

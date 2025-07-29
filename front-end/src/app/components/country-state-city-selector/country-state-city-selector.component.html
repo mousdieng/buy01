@@ -1,0 +1,98 @@
+<div class="w-full space-y-4">
+    <!-- Selected Tags Display -->
+    <div class="flex flex-wrap gap-2" *ngIf="showSelectedTags && (selectedCountry || selectedState || selectedCity)">
+        <p-chip
+                *ngIf="selectedCountry"
+                [label]="'Country: ' + selectedCountry.flag + ' ' + selectedCountry.name"
+                [removable]="showClearButtons"
+                (onRemove)="clearCountry()"
+                styleClass="bg-blue-100 text-blue-800">
+        </p-chip>
+
+        <p-chip
+                *ngIf="selectedState"
+                [label]="'State: ' + selectedState.name"
+                [removable]="showClearButtons"
+                (onRemove)="clearState()"
+                styleClass="bg-green-100 text-green-800">
+        </p-chip>
+
+        <p-chip
+                *ngIf="selectedCity"
+                [label]="'City: ' + selectedCity.name"
+                [removable]="showClearButtons"
+                (onRemove)="clearCity()"
+                styleClass="bg-purple-100 text-purple-800">
+        </p-chip>
+    </div>
+
+    <!-- Country Selection -->
+    <div class="space-y-2">
+        <label *ngIf="showLabels" for="country-select" class="block text-sm font-medium text-gray-700">
+            Country:
+        </label>
+        <p-dropdown
+                inputId="country-select"
+                [options]="countries"
+                [(ngModel)]="selectedCountry"
+                (onChange)="onCountryChange($event)"
+                [placeholder]="countryPlaceholder"
+                [disabled]="disabled"
+                [required]="required"
+                [showClear]="true"
+                [filter]="true"
+                filterBy="label"
+                [styleClass]="'w-full ' + styleClass"
+                [panelStyleClass]="panelStyleClass"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full">
+        </p-dropdown>
+    </div>
+
+    <!-- State Selection -->
+    <div class="space-y-2" *ngIf="states && states.length > 0">
+        <label *ngIf="showLabels" for="state-select" class="block text-sm font-medium text-gray-700">
+            State:
+        </label>
+        <p-dropdown
+                inputId="state-select"
+                [options]="states"
+                [(ngModel)]="selectedState"
+                (onChange)="onStateChange($event)"
+                [placeholder]="statePlaceholder"
+                [disabled]="disabled"
+                [showClear]="true"
+                [filter]="true"
+                filterBy="label"
+                [styleClass]="'w-full ' + styleClass"
+                [panelStyleClass]="panelStyleClass"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full">
+        </p-dropdown>
+    </div>
+
+    <!-- City Selection -->
+    <div class="space-y-2" *ngIf="cities && cities.length > 0">
+        <label *ngIf="showLabels" for="city-select" class="block text-sm font-medium text-gray-700">
+            City:
+        </label>
+        <p-dropdown
+                inputId="city-select"
+                [options]="cities"
+                [(ngModel)]="selectedCity"
+                (onChange)="onCityChange($event)"
+                [placeholder]="cityPlaceholder"
+                [disabled]="disabled"
+                [showClear]="true"
+                [filter]="true"
+                filterBy="label"
+                [styleClass]="'w-full ' + styleClass"
+                [panelStyleClass]="panelStyleClass"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full">
+        </p-dropdown>
+    </div>
+</div>

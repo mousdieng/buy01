@@ -30,10 +30,10 @@ import {
   ɵɵprojectionDef,
   ɵɵstyleProp
 } from "./chunk-HH4NLXCO.js";
-import "./chunk-5OPE3T2R.js";
 import {
   isObservable
 } from "./chunk-4N4GOYJH.js";
+import "./chunk-5OPE3T2R.js";
 import "./chunk-FHTVLBLO.js";
 import {
   __async,

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
 import {
-    ApiResponse,
+    ApiResponse, AvailableProductRequest,
     CreateProduct,
     FullProduct,
     HttpParamsProductsSearch,
@@ -191,4 +191,12 @@ export class ProductService {
   deleteProduct(id: string): Observable<ApiResponse<Product>> {
     return this.http.delete<ApiResponse<Product>>(`${this.baseUrl}/${id}`, { headers: this.getAuthHeaders() });
   }
+
+  productAvailable(product: AvailableProductRequest[]): Observable<ApiResponse<Product[]>> {
+      return this.http.post<ApiResponse<Product[]>>(`${this.baseUrl}/available`, product, { headers: this.getAuthHeaders() });
+  }
+
+    updateProductQuantity(product: AvailableProductRequest[]) {
+        return this.http.put<ApiResponse<Product[]>>(`${this.baseUrl}/quantity-update`, product, { headers: this.getAuthHeaders() });
+    }
 }

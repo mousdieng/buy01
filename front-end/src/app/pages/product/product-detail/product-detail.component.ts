@@ -177,6 +177,3 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
         return !!(this.user?.isAuthenticated && this.user.role === 'CLIENT')
     }
 }
-
-
-quand quelqu'un achete tu doit diminuer les produit
