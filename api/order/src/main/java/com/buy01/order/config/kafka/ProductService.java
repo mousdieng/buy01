@@ -28,12 +28,12 @@ public class ProductService {
     private final ReplyingKafkaTemplate<String, Object, Response<?>> replyingProductKafkaTemplate;
 
     private static final long REPLY_TIMEOUT_SECONDS = 30;
-    private static final String ORDER_REQUEST = "order-request-to-product";
+    private static final String GET_PRODUCTS_REQUEST_BY_ORDER = "get-products-request-by-order";
+    private static final String UPDATE_PRODUCTS_REQUEST_BY_ORDER = "update-products-request-by-order";
 
     public Response<List<ProductDTO>> getProducts(List<String> productIds) {
         try {
-            // Create a ProducerRecord with reply topic header
-            ProducerRecord<String, Object> record = new ProducerRecord<>(ORDER_REQUEST, productIds);
+            ProducerRecord<String, Object> record = new ProducerRecord<>(GET_PRODUCTS_REQUEST_BY_ORDER, productIds);
 
             record.headers().add("X-Correlation-ID", UUID.randomUUID().toString().getBytes());
             record.headers().add("X-Correlation-Source", "product".getBytes());
@@ -74,6 +74,49 @@ public class ProductService {
             }
         }
     }
+
+    public Response<List<ProductDTO>> updateQuantities(Map<String, Integer> products) {
+        try {
+            ProducerRecord<String, Object> record = new ProducerRecord<>(UPDATE_PRODUCTS_REQUEST_BY_ORDER, products);
+
+            record.headers().add("X-Correlation-ID", UUID.randomUUID().toString().getBytes());
+            record.headers().add("X-Correlation-Source", "product".getBytes());
+
+            // Send and receive the response
+            RequestReplyFuture<String, Object, Response<?>> replyFuture =
+                    replyingProductKafkaTemplate.sendAndReceive(record);
+
+            // Wait for response
+            Response<?> productResponse = replyFuture.get(REPLY_TIMEOUT_SECONDS, TimeUnit.SECONDS).value();
+            log.info("Response Coming from product service: ====== {} ======", productResponse);
+            System.out.println(productResponse);
+            if (productResponse.getStatus() != 200 && productResponse.getStatus() != 404) {
+                return Response.build(null, productResponse.getMessage(), HttpStatus.valueOf(productResponse.getStatus()));
+            }
+
+            return Response.build(convertToProductDTOList(productResponse.getData()), productResponse.getMessage(), HttpStatus.valueOf(productResponse.getStatus()));
+
+        } catch (Exception e) {
+            log.error("Error in getProducts for productIds: {}", products, e);
+            String errorMessage = e.getMessage();
+            String jsonPart = extractJsonFromErrorMessage(errorMessage);
+
+            if (jsonPart != null) {
+                try {
+                    // Parse the JSON string into a Response class
+                    Response<Map<String, Object>> jsonResponse = jacksonObjectMapper.readValue(jsonPart,
+                            new TypeReference<Response<Map<String, Object>>>() {});
+                    return Response.build(null, jsonResponse.getMessage(), HttpStatus.valueOf(jsonResponse.getStatus()));
+                } catch (IOException ex) {
+                    log.error("Failed to parse JSON from error message", ex);
+                    return Response.badRequest(errorMessage);
+                }
+            } else {
+                return Response.badRequest(errorMessage);
+            }
+        }
+    }
+
 
     @SuppressWarnings("unchecked")
     private List<ProductDTO> convertToProductDTOList(Object data) {

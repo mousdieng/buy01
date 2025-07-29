@@ -3,12 +3,25 @@
         <p-toast></p-toast>
         <p-confirmDialog></p-confirmDialog>
 
-        <div *ngIf="!checkoutState.isLoading && status.isCartEmpty && status.isIncompleteOrdersEmpty" class="flex flex-col items-center justify-center min-h-64 sm:min-h-96">
-            <div class="relative">
-                <div class="absolute inset-0 rounded-full animate-pulse opacity-20"></div>
-            </div>
-            <p class="mt-4 sm:mt-6 text-base sm:text-lg font-medium text-gray-700 animate-pulse text-center px-4">Loading checkout...dddddddddddddddddddddddddddddddddddddd</p>
-        </div>
+        <p-card *ngIf="!checkoutState.isLoading && status.isCartEmpty && status.isIncompleteOrdersEmpty" class="shadow-xl rounded-2xl text-center">
+            <ng-template pTemplate="header">
+                <div class="p-4 sm:p-6">
+                    <i class="pi pi-shopping-cart text-4xl sm:text-5xl md:text-6xl text-gray-300 mb-3 sm:mb-4"></i>
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-600 mb-2">Your cart is empty</h3>
+                    <p class="text-sm sm:text-base text-gray-500">Add some items to your cart to get started</p>
+                </div>
+            </ng-template>
+            <ng-template pTemplate="footer">
+                <div class="p-4 sm:p-6">
+                    <p-button
+                            label="Continue Shopping"
+                            icon="pi pi-arrow-left"
+                            (click)="router.navigate(['/products'])"
+                            styleClass="w-full sm:w-auto">
+                    </p-button>
+                </div>
+            </ng-template>
+        </p-card>
 
         <!-- Loading state -->
         <div *ngIf="checkoutState.isLoading" class="flex flex-col items-center justify-center min-h-64 sm:min-h-96">

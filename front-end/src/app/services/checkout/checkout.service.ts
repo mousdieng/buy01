@@ -68,20 +68,19 @@ export class CheckoutService {
     return this.elements;
   }
 
-  // Initialize checkout process
+  async initializeStripe(): Promise<void> {
+    if (!this.stripe) {
+      this.stripe = await loadStripe(environment.stripeApiKey);
+    }
+  }
+
   async initializeCheckout(): Promise<void> {
     this.updateState({ isLoading: true });
 
     try {
-      // Load cart data
       await this.loadCart();
-
-      // Initialize Stripe
-      this.stripe = await loadStripe(environment.stripeApiKey);
-
-      // Calculate order summary
+      this.initializeStripe()
       this.calculateOrderSummary();
-
       this.updateState({ isLoading: false });
     } catch (error) {
       this.updateState({ isLoading: false });
@@ -109,7 +108,6 @@ export class CheckoutService {
 
       this.updateState({ cart, items });
     } catch (error) {
-      console.error('Error loading cart:', error);
       throw error;
     }
   }
@@ -263,8 +261,6 @@ export class CheckoutService {
       if (paymentIntent) {
         // Payment succeeded, confirm with backend
         await this.confirmOrderWithBackend(paymentIntent.id);
-        await this.productService.updateProductQuantity(availableProduct);
-
         this.updateState({ isProcessingPayment: false });
         return {
           success: true,
@@ -373,6 +369,12 @@ export class CheckoutService {
       ...this.currentState,
       ...updates
     });
+  }
+
+  clearStripeElements(): void {
+    if (this.elements) {
+      this.elements = null;
+    }
   }
 
   public calculateOrderSummary(): void {

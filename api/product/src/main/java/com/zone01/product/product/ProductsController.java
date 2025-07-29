@@ -1,5 +1,6 @@
 package com.zone01.product.product;
 
+import com.zone01.product.dto.ProductAvailableRequest;
 import com.zone01.product.dto.ProductSearchCriteria;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -44,6 +45,18 @@ public class ProductsController {
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @PostMapping("/available")
+    public ResponseEntity<Response<List<Products>>> getAvailableProducts(@RequestBody List<ProductAvailableRequest> products) {
+        Response<List<Products>> response = productsService.isProductAvailable(products);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+//    @PutMapping("/quantity-update")
+//    public ResponseEntity<Response<List<Products>>> updateProductQuantities(@RequestBody List<ProductAvailableRequest> products) {
+//        Response<List<Products>> response = productsService.updateProductQuantities(products);
+//        return ResponseEntity.status(response.getStatus()).body(response);
+//    }
 
     @GetMapping("/search")
     public ResponseEntity<Response<Page<Products>>> searchProducts(

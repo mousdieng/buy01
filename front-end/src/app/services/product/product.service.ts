@@ -195,8 +195,4 @@ export class ProductService {
   productAvailable(product: AvailableProductRequest[]): Observable<ApiResponse<Product[]>> {
       return this.http.post<ApiResponse<Product[]>>(`${this.baseUrl}/available`, product, { headers: this.getAuthHeaders() });
   }
-
-    updateProductQuantity(product: AvailableProductRequest[]) {
-        return this.http.put<ApiResponse<Product[]>>(`${this.baseUrl}/quantity-update`, product, { headers: this.getAuthHeaders() });
-    }
 }

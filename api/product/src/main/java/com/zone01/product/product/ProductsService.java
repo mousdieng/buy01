@@ -3,10 +3,7 @@ package com.zone01.product.product;
 import com.mongodb.client.MongoClients;
 import com.zone01.product.config.AccessValidation;
 import com.zone01.product.config.kafka.MediaServices;
-import com.zone01.product.dto.CreateProductDTO;
-import com.zone01.product.dto.ProductSearchCriteria;
-import com.zone01.product.dto.UpdateProductsDTO;
-import com.zone01.product.dto.UserDTO;
+import com.zone01.product.dto.*;
 import com.zone01.product.model.Response;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -22,7 +19,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -35,6 +34,72 @@ public class ProductsService {
 
     public Page<Products> getAllProducts(int page, int size) {
         return productsRepository.findAll(PageRequest.of(page, size));
+    }
+
+    public Response<List<Products>> isProductAvailable(List<ProductAvailableRequest> dto) {
+        List<String> productIds = dto.stream()
+                .map(ProductAvailableRequest::getId)
+                .toList();
+
+        List<Products> products = productsRepository.findByIdIn(productIds);
+
+        Map<String, Products> productMap = products.stream()
+                .collect(Collectors.toMap(Products::getId, Function.identity()));
+
+        var grouped = dto.stream()
+                .collect(Collectors.groupingBy(
+                        request -> {
+                            Products product = productMap.get(request.getId());
+                            return product != null && product.getQuantity() >= request.getQuantity();
+                        },
+                        Collectors.mapping(
+                                request -> productMap.get(request.getId()),
+                                Collectors.toList()
+                        )
+                ));
+
+        List<Products> available = grouped.getOrDefault(true, List.of());
+        List<Products> unavailable = grouped.getOrDefault(false, List.of());
+
+        if (!unavailable.isEmpty()) {
+            return Response.<List<Products>>builder()
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .message("Some products are unavailable")
+                    .data(unavailable)
+                    .build();
+        }
+
+        return Response.<List<Products>>builder()
+                .status(HttpStatus.OK.value())
+                .message("All products are available")
+                .data(available)
+                .build();
+    }
+
+    public Response<List<Products>> updateProductQuantities(Map<String, Integer> dto) {
+        List<String> productIds = new ArrayList<>(dto.keySet());
+
+        // Fetch all matching products
+        List<Products> products = productsRepository.findByIdIn(productIds);
+
+        // Map for easy lookup
+        Map<String, Products> productMap = products.stream()
+                .collect(Collectors.toMap(Products::getId, Function.identity()));
+
+        // Update quantities
+        dto.forEach((productId, quantityToSubtract) -> {
+            Products product = productMap.get(productId);
+            if (product != null) {
+                int newQuantity = product.getQuantity() - quantityToSubtract;
+                product.setQuantity(Math.max(newQuantity, 0)); // Avoid negative quantity
+            }
+        });
+
+        return Response.<List<Products>>builder()
+                .status(HttpStatus.OK.value())
+                .message("Product quantities updated successfully")
+                .data(productsRepository.saveAll(productMap.values()))
+                .build();
     }
 
     public Optional<Products> getProductById(String id) {

@@ -73,7 +73,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   constructor(
       private fb: FormBuilder,
-      private router: Router,
+      public router: Router,
       private messageService: MessageService,
       private confirmationService: ConfirmationService,
       private authService: AuthService,
@@ -91,17 +91,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         .subscribe(state => {
           const previousState = this.checkoutState;
           this.checkoutState = state;
-
           if (previousState.selectedOrder !== state.selectedOrder) {
-            console.log('Selected order changed:', state.selectedOrder);
+            if (!state.selectedOrder) this.clearPaymentElements()
             this.initialisePaymentIfSelectedExist();
           }
         });
 
     try {
       await this.checkoutService.initializeCheckout();
-
-      this.initialisePaymentIfSelectedExist()
     } catch (error) {
       this.messageService.add({
         severity: 'error',
@@ -155,11 +152,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (orders) => {
-            const incompleteOrders = orders?.data?.content;
-            if (incompleteOrders) {
+            const incompleteOrders: Order[] = orders?.data?.content ?? [];;
+            if (incompleteOrders.length > 0) {
               this.checkoutService.updateState({ incompleteOrders });
             } else {
-              console.warn('No incomplete orders found.');
               this.status.isIncompleteOrdersEmpty = true;
             }
           },
@@ -200,23 +196,27 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   initialisePaymentIfSelectedExist() {
     if (this.checkoutState.selectedOrder) {
-      console.log('initialisePaymentIfSelectedExist', this.checkoutState.selectedOrder)
-      // this.checkoutService.calculateOrderSummary()
       this.initializePaymentOrder();
     }
   }
 
-  handleSelectIncomplete(event: any) {
+  async handleSelectIncomplete(event: any) {
     const selectedOrder = event.value as Order;
 
     if (selectedOrder) {
+      this.clearPaymentElements();
+
+      if (!this.checkoutService.stripe$) {
+        await this.checkoutService.initializeStripe();
+      }
+
       this.checkoutService.updateState({
         selectedOrder: selectedOrder,
         isFormNeeded: false,
       });
 
-      // Update items and summary from the selected order
-      this.initialisePaymentIfSelectedExist()
+      this.checkoutService.calculateOrderSummary()
+      this.initialisePaymentIfSelectedExist();
 
       this.messageService.add({
         severity: 'info',
@@ -226,8 +226,17 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
   }
 
+  private clearPaymentElements() {
+    this.checkoutService.updateState({
+      showPaymentForm: false
+    });
+
+    this.checkoutService.clearStripeElements();
+  }
+
   private initializePaymentOrder() {
     try {
+      // this.checkoutService.clearStripeElements();
       this.checkoutService.initializeStripeElements();
 
       this.checkoutService.updateState({
@@ -238,7 +247,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         if (this.paymentElementRef?.nativeElement) {
           this.checkoutService.mountPaymentElement(this.paymentElementRef.nativeElement);
         }
-      }, 100);
+      }, 150);
 
     } catch (error) {
       console.error('Error initializing payment for incomplete order:', error);
@@ -251,6 +260,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   clearOrderSelection() {
+    this.clearPaymentElements();
     this.checkoutService.updateState({
       selectedOrder: null,
       isFormNeeded: true,
@@ -278,35 +288,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.router.navigate(['/order'], {
       queryParams: { id: order.id }
     });
-  }
-
-  onSameAsShippingChange() {
-    const sameAsShipping = this.checkoutForm.get('sameAsShipping')?.value;
-    const billingGroup = this.checkoutForm.get('billing') as FormGroup;
-
-    if (sameAsShipping) {
-      // Copy shipping address to billing
-      const shippingValue = this.checkoutForm.get('shipping')?.value;
-      billingGroup.patchValue(shippingValue);
-
-      // Sync location selections
-      this.checkoutService.syncBillingWithShipping();
-
-      // Clear billing form validation
-      Object.keys(billingGroup.controls).forEach(key => {
-        billingGroup.get(key)?.clearValidators();
-        billingGroup.get(key)?.updateValueAndValidity();
-      });
-    } else {
-      // Add billing form validation
-      billingGroup.get('fullName')?.setValidators([Validators.required]);
-      billingGroup.get('address1')?.setValidators([Validators.required]);
-      billingGroup.get('postalCode')?.setValidators([Validators.required]);
-
-      Object.keys(billingGroup.controls).forEach(key => {
-        billingGroup.get(key)?.updateValueAndValidity();
-      });
-    }
   }
 
   public initializeStripeElements = (order: Order) => {

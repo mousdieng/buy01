@@ -20,7 +20,6 @@ public class KafkaConsumer {
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
-
     private static final String PRODUCT_RESPONSE = "product-response-to-order";
     private static final String GROUP_ID = "product-to-media";
 
