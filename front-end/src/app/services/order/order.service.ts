@@ -110,11 +110,7 @@ export class OrderService {
 
     private handleError<T>(operation = 'operation', result?: T) {
         return (error: any): Observable<T> => {
-            console.error(`${operation} failed:`, error);
-
-            // Handle specific HTTP error codes
             if (error.status === 401) {
-                // Handle unauthorized - maybe redirect to login
                 this.tokenService.remove();
             }
 

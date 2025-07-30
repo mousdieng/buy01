@@ -152,7 +152,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (orders) => {
-            const incompleteOrders: Order[] = orders?.data?.content ?? [];;
+            const incompleteOrders: Order[] = orders?.data?.content ?? [];
             if (incompleteOrders.length > 0) {
               this.checkoutService.updateState({ incompleteOrders });
             } else {
@@ -161,7 +161,11 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             this.status.isIncompleteOrdersEmpty = true;
-            console.error('Error fetching incomplete orders:', err);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: err.messages || 'Failed to fetch incomplete orders. Please try again.'
+            });
           }
         });
   }
@@ -250,11 +254,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       }, 150);
 
     } catch (error) {
-      console.error('Error initializing payment for incomplete order:', error);
       this.messageService.add({
         severity: 'error',
         summary: 'Payment Error',
-        detail: 'Failed to initialize payment. Please try again.'
+        detail: error instanceof Error ? error.message : 'Failed to initialize payment. Please try again.'
       });
     }
   }
@@ -267,9 +270,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       showPaymentForm: false
     });
 
-    // Reload cart items and recalculate summary
     this.checkoutService.initializeCheckout().catch(error => {
-      console.error('Error reinitializing checkout:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error.messages || 'Failed to reinitialize checkout. Please try again.'
+      });
     });
 
     this.messageService.add({
@@ -280,11 +286,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   viewOrderDetails(event: Event, order: Order) {
-    // Prevent event bubbling to avoid dropdown selection
     event.preventDefault();
     event.stopPropagation();
 
-    // Navigate to order details page
     this.router.navigate(['/order'], {
       queryParams: { id: order.id }
     });
@@ -306,7 +310,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       const result = await this.checkoutService.processPayment(email);
 
       if (result.success && result.paymentIntentId) {
-        // Clear cart after successful payment (only if it's not from incomplete order)
         if (!selectedOrder) {
           await this.checkoutService.clearCart();
         }
@@ -326,7 +329,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         });
       }
     } catch (error) {
-      console.error('Payment processing error:', error);
       this.messageService.add({
         severity: 'error',
         summary: 'Error',

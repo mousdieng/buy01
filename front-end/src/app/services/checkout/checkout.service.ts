@@ -79,7 +79,7 @@ export class CheckoutService {
 
     try {
       await this.loadCart();
-      this.initializeStripe()
+      await this.initializeStripe()
       this.calculateOrderSummary();
       this.updateState({ isLoading: false });
     } catch (error) {
@@ -171,7 +171,6 @@ export class CheckoutService {
     );
   }
 
-  // Initialize Stripe elements
   initializeStripeElements(): void {
     const { selectedOrder } = this.currentState;
 
@@ -194,7 +193,6 @@ export class CheckoutService {
     }
   }
 
-  // Mount payment element
   mountPaymentElement(elementRef: HTMLElement): void {
     if (this.elements) {
       const paymentElement = this.elements.create('payment', {
@@ -204,7 +202,6 @@ export class CheckoutService {
     }
   }
 
-  // Process payment
   async processPayment(email: string): Promise<{ success: boolean; paymentIntentId?: string; error?: string }> {
     const { selectedOrder } = this.currentState;
 
@@ -229,7 +226,7 @@ export class CheckoutService {
                   this.updateState({ isProcessingPayment: false });
                   return {
                     success: false,
-                    error: 'Product not available. Please try again.'
+                    error: `Product not available. ${response.message}. Please try again.`
                   };
                 }
 
@@ -259,7 +256,6 @@ export class CheckoutService {
       }
 
       if (paymentIntent) {
-        // Payment succeeded, confirm with backend
         await this.confirmOrderWithBackend(paymentIntent.id);
         this.updateState({ isProcessingPayment: false });
         return {
@@ -278,34 +274,27 @@ export class CheckoutService {
       this.updateState({ isProcessingPayment: false });
       return {
         success: false,
-        error: 'An error occurred while processing payment. Please try again.'
+        error: error instanceof Error ? error.message : `An error occurred while processing payment. Please try again.`
       };
     }
   }
 
-  // Confirm order with backend
   private async confirmOrderWithBackend(paymentIntentId: string): Promise<any> {
     const payload: OrderConfirmationRequest = {
       paymentIntentId
     };
 
     try {
-      const response = await this.http.post(
+      return  await this.http.post(
           `${environment.apiUrl}order/confirm`,
           payload,
           { headers: this.getAuthHeaders() }
       ).toPromise();
-
-      return response;
     } catch (error) {
-      console.error('Error confirming order:', error);
-      // Don't throw error here as payment succeeded
-      // We can handle this via webhook instead
-      return null;
+      return error;
     }
   }
 
-  // Retry payment with existing order
   retryPayment(): void {
     const { selectedOrder } = this.currentState;
     if (selectedOrder) {
@@ -314,16 +303,14 @@ export class CheckoutService {
     }
   }
 
-  // Clear cart after successful payment
   async clearCart(): Promise<void> {
     try {
       await this.cartService.clearCart();
     } catch (error) {
-      console.error('Error clearing cart:', error);
+      throw error;
     }
   }
 
-  // Reset checkout state
   resetCheckoutState(): void {
     this.elements = null;
     this.checkoutStateSubject.next(this.defaultCheckoutState());
@@ -354,7 +341,6 @@ export class CheckoutService {
     }
   }
 
-  // Get auth headers
   private getAuthHeaders(): HttpHeaders {
     const token = this.tokenService.token;
     return new HttpHeaders({
@@ -363,7 +349,6 @@ export class CheckoutService {
     });
   }
 
-  // Update state helper
   public updateState(updates: Partial<CheckoutState>): void {
     this.checkoutStateSubject.next({
       ...this.currentState,

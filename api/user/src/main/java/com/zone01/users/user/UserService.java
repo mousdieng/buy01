@@ -3,7 +3,6 @@ package com.zone01.users.user;
 import com.zone01.users.config.jwt.JwtService;
 import com.zone01.users.dto.*;
 import com.zone01.users.model.*;
-import com.zone01.users.model.exception.RessourceAlreadyUsedException;
 import com.zone01.users.model.exception.UserNotFoundException;
 import com.zone01.users.service.HelperUserService;
 import com.zone01.users.service.FileServices;

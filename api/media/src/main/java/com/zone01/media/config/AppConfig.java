@@ -18,7 +18,7 @@ public class AppConfig {
     public FilterRegistrationBean<AccessValidation> accessValidationFilter() {
         FilterRegistrationBean<AccessValidation> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new AccessValidation(jacksonObjectMapper, replyingAuthKafkaTemplate));
-        registrationBean.addUrlPatterns("/api/v1/*"); // Specify your desired URL patterns
+        registrationBean.addUrlPatterns("/api/v1/*");
         return registrationBean;
     }
 

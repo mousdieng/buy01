@@ -1,6 +1,5 @@
 package com.buy01.order.model;
 
-import com.fasterxml.jackson.databind.ser.std.SerializableSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,10 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.*;
 
 @Data
@@ -144,33 +141,5 @@ public class Response<T> {
 
     public static <T, U> Response<T> mapper(Response<U> response) {
         return build(null, response.getMessage(), HttpStatus.valueOf(response.status));
-    }
-
-    /**
-     * Convert to Optional based on success status
-     */
-    public Optional<T> toOptional() {
-        return isSuccess() ? Optional.ofNullable(data) : Optional.empty();
-    }
-
-    /**
-     * Get data or return default value
-     */
-    public T getDataOrDefault(T defaultValue) {
-        return isSuccess() ? data : defaultValue;
-    }
-
-    /**
-     * Apply operation if condition is true
-     */
-    public Response<T> applyIf(boolean condition, UnaryOperator<Response<T>> operation) {
-        return condition ? operation.apply(this) : this;
-    }
-
-    /**
-     * Conditional response creation
-     */
-    public static <T> Response<T> when(boolean condition, Supplier<Response<T>> trueResponse, Supplier<Response<T>> falseResponse) {
-        return condition ? trueResponse.get() : falseResponse.get();
     }
 }

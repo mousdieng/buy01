@@ -8,6 +8,7 @@ import com.buy01.order.service.CheckoutService;
 import com.buy01.order.service.OrderStatisticsService;
 import com.stripe.exception.StripeException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,7 +30,7 @@ public class OrderController {
 
     @PostMapping("/checkout/integrated")
     public ResponseEntity<Response<Order>> integratedCheckout(
-            @RequestBody CheckoutRequestDTO requestDTO,
+            @Valid @RequestBody CheckoutRequestDTO requestDTO,
             HttpServletRequest request) throws StripeException {
         Response<Order> response = checkoutService.createIncompleteOrder(requestDTO, request);
         return ResponseEntity.status(response.getStatus()).body(response);
