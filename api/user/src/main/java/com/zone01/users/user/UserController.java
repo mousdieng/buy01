@@ -1,7 +1,10 @@
 package com.zone01.users.user;
 
-import com.zone01.users.dto.*;
 import com.zone01.users.model.*;
+import com.zone01.users.model.dto.UpdateUserDTO;
+import com.zone01.users.model.dto.UserDTO;
+import com.zone01.users.model.dto.UserLoginDTO;
+import com.zone01.users.model.dto.UserRegistrationDTO;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

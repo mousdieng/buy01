@@ -7,5 +7,5 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Role {
     SELLER,
-    CLIENT;
+    CLIENT
 }

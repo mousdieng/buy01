@@ -8,7 +8,7 @@ import {CountryStateCitySelectorComponent} from "../country-state-city-selector/
 import {Checkbox} from "primeng/checkbox";
 import {Button} from "primeng/button";
 import {MessageService} from "primeng/api";
-import {Subject, takeUntil} from "rxjs";
+import {debounceTime, Subject, takeUntil} from "rxjs";
 import {Router} from "@angular/router";
 import {CartService} from "../../services/cart/cart.service";
 
@@ -108,6 +108,7 @@ export class OrderFormComponent implements OnDestroy {
   }
 
   async proceedToPayment() {
+    if (this.isCreatingOrder) return;
     const locationValidation = this.checkoutService.validateLocationSelections(
         this.checkoutForm.get('sameAsShipping')?.value
     );
@@ -168,7 +169,6 @@ export class OrderFormComponent implements OnDestroy {
 
         this.createOrder(formData)
       } catch (error) {
-        console.error('Error proceeding to payment:', error);
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
@@ -186,10 +186,12 @@ export class OrderFormComponent implements OnDestroy {
   }
 
   createOrder(formData: CheckoutFormData) {
+    this.isCreatingOrder = true;
     this.checkoutService.createIncompleteOrder(formData)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
+            this.isCreatingOrder = false;
             this.messageService.add({
               severity: 'success',
               summary: 'Order Created',
@@ -201,6 +203,7 @@ export class OrderFormComponent implements OnDestroy {
                 selectedOrder: response.data
               })
               this.cartService.clearCart();
+              this.resetForm();
             } else {
               this.checkoutService.updateState({
                 selectedOrder: response.data,
@@ -210,14 +213,23 @@ export class OrderFormComponent implements OnDestroy {
             }
           },
           error: (error) => {
-            console.error('Error creating order:', error);
+            this.isCreatingOrder = false;
             this.messageService.add({
               severity: 'error',
               summary: 'Error',
-              detail: 'Failed to create order. Please try again.'
+              detail: error.message || 'Failed to create order. Please try again.'
             });
           }
         });
+  }
+
+  private resetForm(): void {
+    this.checkoutForm.reset();
+    this.checkoutForm.patchValue({
+      sameAsShipping: true
+    });
+    this.checkoutForm.markAsUntouched();
+    this.checkoutForm.markAsPristine();
   }
 
   private markFormGroupTouched() {
@@ -336,70 +348,3 @@ export class OrderFormComponent implements OnDestroy {
     return '';
   }
 }
-
-
-
-/*
-  private setLocationSelection(addressType: 'shipping' | 'billing', address: Partial<LocationSelection>): void {
-    try {
-      // Find country by name
-      const country = Country.getAllCountries().find(c =>
-          c.name.toLowerCase() === address.country?.name.toLowerCase() ||
-          c.isoCode.toLowerCase() === address.country?.isoCode.toLowerCase()
-      );
-
-      if (!country) {
-        console.warn(`Country not found: ${address.country}`);
-        return;
-      }
-
-      // Find state by name within the country
-      const state = State.getStatesOfCountry(country.isoCode).find(s =>
-          s.name.toLowerCase() === address.state?.name.toLowerCase() ||
-          s.isoCode.toLowerCase() === address.state?.isoCode.toLowerCase()
-      );
-
-      // Find city by name within the state (if state exists)
-      let city = null;
-      if (state) {
-        city = City.getCitiesOfState(country.isoCode, state.isoCode).find(c =>
-            c.name.toLowerCase() === address.city?.name.toLowerCase()
-        );
-      }
-
-      // Create location selection
-      const locationSelection: Partial<LocationSelection> = {
-        country: country,
-        state: state || null,
-        city: city || null
-      };
-
-      // Update the checkout service with the location selection
-      if (addressType === 'shipping') {
-        this.checkoutService.updateShippingLocation(locationSelection);
-      } else {
-        this.checkoutService.updateBillingLocation(locationSelection);
-      }
-
-      // Store the codes in the form for reference
-      const addressGroup = this.checkoutForm.get(addressType);
-      addressGroup?.patchValue({
-        countryCode: country.isoCode,
-        stateCode: state?.isoCode || '',
-      });
-
-    } catch (error) {
-      console.error(`Error setting location selection for ${addressType}:`, error);
-    }
-  }
-
-  private addressesAreEqual(shipping: ShippingAddress, billing: BillingAddress): boolean {
-    return shipping.fullName === billing.fullName &&
-        shipping.address1 === billing.address1 &&
-        shipping.address2 === billing.address2 &&
-        shipping.location.city === billing.location.city &&
-        shipping.location.state === billing.location.state &&
-        shipping.location.country === billing.location.country &&
-        shipping.postalCode === billing.postalCode;
-  }
-* */

@@ -5,7 +5,7 @@ import {ApiResponse, TokenPayload, Tokens, User, UserPayload} from "../../types"
 import {HttpClient, HttpHeaders, HttpStatusCode} from "@angular/common/http";
 import {Observable, of} from "rxjs";
 import {catchError, map} from "rxjs/operators";
-import {environment} from "../../environment";
+import { environment } from "../../../environments/environment";
 
 @Injectable({
   providedIn: 'root'

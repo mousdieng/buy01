@@ -3,7 +3,6 @@ import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
 import {
     ApiResponse, AvailableProductRequest,
     CreateProduct,
-    FullProduct,
     HttpParamsProductsSearch,
     PaginatedResponse,
     Product,
@@ -13,8 +12,7 @@ import {forkJoin, Observable, of, switchMap} from "rxjs";
 import {TokenService} from "../token/token.service";
 import {MediaService} from "../media/media.service";
 import {map} from "rxjs/operators";
-import {UserService} from "../user/user.service";
-import {environment} from "../../environment";
+import { environment } from "../../../environments/environment";
 
 @Injectable({
   providedIn: 'root'
@@ -25,8 +23,7 @@ export class ProductService {
   constructor(
       private http: HttpClient,
       private tokenService: TokenService,
-      private mediaService: MediaService,
-      private userService: UserService
+      private mediaService: MediaService
   ) {}
 
   private getAuthHeaders(): HttpHeaders {
@@ -37,7 +34,6 @@ export class ProductService {
     });
   }
 
-  // Get product by ID
   getProductById(id: string): Observable<ApiResponse<Product>> {
     return this.http.get<ApiResponse<Product>>(
         `${this.baseUrl}/${id}`,
@@ -45,7 +41,6 @@ export class ProductService {
     );
   }
 
-  // Get products by user ID with pagination
   getProductsByUserId(userId: string, page: number = 0, size: number = 10): Observable<ApiResponse<PaginatedResponse<Product>>> {
     return this.http.get<ApiResponse<PaginatedResponse<Product>>>(
         `${this.baseUrl}/users/${userId}?page=${page}&size=${size}`,
@@ -105,16 +100,6 @@ export class ProductService {
         ).pipe(
           switchMap(productsResponse => {
                 const products: Product[] = productsResponse.data.content;
-                if (products.length === 0) {
-                    return of({
-                        status: productsResponse.status,
-                        message: productsResponse.message,
-                        data: {
-                            content: [],
-                            page: productsResponse.data.page
-                        }
-                    });
-                }
 
                 const mediaRequests = products.map(product =>
                     forkJoin({
@@ -134,8 +119,8 @@ export class ProductService {
                         status: productsResponse.status,
                         message: productsResponse.message,
                         data: {
+                            ...productsResponse.data,
                             content: fullProductsArray,
-                            page: productsResponse.data.page
                         }
                     }))
                 );
@@ -147,16 +132,6 @@ export class ProductService {
     return this.getProductsByUserId(userId, page, size).pipe(
         switchMap(productsResponse => {
           const products = productsResponse.data.content;
-          if (products.length === 0) {
-                return of({
-                    status: productsResponse.status,
-                    message: productsResponse.message,
-                    data: {
-                        content: [],
-                        page: productsResponse.data.page
-                    }
-                })
-          }
           const mediaRequests = products.map(product =>
               this.mediaService.getMediaByProductId(product.id).pipe(
                   map(mediaResponse => ({
@@ -171,8 +146,8 @@ export class ProductService {
                 status: productsResponse.status,
                 message: productsResponse.message,
                 data: {
-                  content: productMediaArray,
-                  page: productsResponse.data.page
+                    ...productsResponse.data,
+                    content: productMediaArray,
                 }
               }))
           );

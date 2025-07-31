@@ -43,7 +43,7 @@ import {CancelOrderRequest, OrderService} from "../../services/order/order.servi
 import { AuthService } from "../../services/auth/auth.service";
 import {Router, RouterLink, RouterLinkActive} from '@angular/router';
 import { OrderSearchParams } from "../../services/order/order.service";
-import { environment } from "../../environment";
+import { environment } from "../../../environments/environment";
 import { UserService } from '../../services/user/user.service';
 import {FileData, FileService} from "../../services/file-service/file-service.service";
 import {Image} from "primeng/image";
@@ -186,7 +186,6 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     private createEditProfileForm(): FormGroup {
         return this.fb.group({
             name: ['', [Validators.required, Validators.minLength(2)]],
-            email: ['', [Validators.required, Validators.email]],
         });
     }
 
@@ -347,17 +346,16 @@ export class UserProfileComponent implements OnInit, OnDestroy {
             )
             .subscribe({
                 next: (response: ApiResponse<PaginatedResponse<Order>>) => {
-                    console.log("response", response)
                     this.orders = response.data.content;
                     this.filteredOrders = response.data.content;
-                    this.totalOrders = response.data.page.totalElements;
-                    this.totalPages = response.data.page.totalPages;
+                    this.totalOrders = response.data.totalElements;
+                    this.totalPages = response.data.totalPages;
                 },
                 error: (error) => {
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Search Error',
-                        detail: 'Unable to load orders'
+                        detail: error instanceof Error ? error.message : 'Unable to load orders'
                     });
                     this.orders = [];
                     this.filteredOrders = [];
@@ -440,8 +438,6 @@ export class UserProfileComponent implements OnInit, OnDestroy {
             const formData = this.editProfileForm.value;
             let updatePayload: FormData = new FormData();
             updatePayload.append('name', formData.name);
-            updatePayload.append('email', formData.email);
-
             this.userService.updateUser(this.user.id, updatePayload)
                 .pipe(takeUntil(this.destroy$))
                 .subscribe({
@@ -535,7 +531,6 @@ export class UserProfileComponent implements OnInit, OnDestroy {
                     });
                 }
             });
-
     }
 
     deleteAccount(): void {

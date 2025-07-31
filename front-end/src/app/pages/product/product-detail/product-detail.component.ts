@@ -1,6 +1,6 @@
 import {Component, computed, OnDestroy, OnInit, Signal, signal} from '@angular/core';
-import {ActivatedRoute, Route, Router, RouterLink, RouterLinkActive} from "@angular/router";
-import {ACTION, FullProduct, ProductMedia, UserPayload} from "../../../types";
+import {ActivatedRoute, Router, RouterLink, RouterLinkActive} from "@angular/router";
+import { ProductMedia, UserPayload} from "../../../types";
 import {ProductService} from "../../../services/product/product.service";
 import {MessageService, PrimeTemplate} from "primeng/api";
 import {CarouselModule} from "primeng/carousel";
@@ -9,11 +9,12 @@ import {CommonModule} from "@angular/common";
 import {TagModule} from "primeng/tag";
 import {AuthService} from "../../../services/auth/auth.service";
 import {debounceTime, Subject, takeUntil} from "rxjs";
-import {environment} from "../../../environment";
+import { environment } from "../../../../environments/environment";
 import {Button} from "primeng/button";
 import {Ripple} from "primeng/ripple";
 import {Tooltip} from "primeng/tooltip";
 import {CartService} from "../../../services/cart/cart.service";
+import {Toast} from "primeng/toast";
 
 
 type StockSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
@@ -31,8 +32,10 @@ type StockSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'con
         RouterLinkActive,
         Button,
         Ripple,
-        Tooltip
+        Tooltip,
+        Toast
     ],
+    providers: [MessageService],
     templateUrl: './product-detail.component.html',
     styleUrl: './product-detail.component.css',
 })
@@ -43,7 +46,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>();
     private addToCartSubject = new Subject<Event>();
 
-    // Signals for reactive state management
     isLoading = signal(false);
 
     // Computed values
@@ -84,7 +86,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       private productService: ProductService,
       private router: Router,
       private authService: AuthService,
-      private cartService: CartService
+      private cartService: CartService,
+      private messageService: MessageService
   ) {}
 
   ngOnInit(): void {
@@ -123,14 +126,14 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
       this.productService.getSingleProductsMedia(productId).subscribe({
         next: (response) => {
-            console.log(response)
           this.product = response.data;
         },
         error: (err) => {
-            this.router.navigate(['/error', {
-                message: err?.error?.message || "Failed to load the product",
-                status: err?.error?.status || 500
-            }])
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Fetch Product Failed',
+                detail: err?.error?.message || "Failed to load the product"
+            })
         }
       })
     });
@@ -161,7 +164,11 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
             }
             this.cartService.toggleCart(event);
         } catch (error) {
-            console.error('Error managing cart:', error);
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Managing Cart Failed',
+                detail: error instanceof Error ? error.message : "Error fetching the product with the corresponding id."
+            })
         } finally {
             this.isLoading.set(false);
         }
@@ -169,9 +176,9 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
 
     getMedia(productId: string, imagePath: string) {
-    if (!productId || !imagePath) return null;
-    return `${environment.apiUrl}media/${productId}/${imagePath}`
-  }
+        if (!productId || !imagePath) return null;
+        return `${environment.apiUrl}media/${productId}/${imagePath}`
+    }
 
     canShowCart(): boolean {
         return !!(this.user?.isAuthenticated && this.user.role === 'CLIENT')

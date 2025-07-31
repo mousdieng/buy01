@@ -3,7 +3,7 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {TokenService} from "../token/token.service";
 import {Observable} from "rxjs";
 import {ApiResponse, Media, PaginatedResponse, Product} from "../../types";
-import {environment} from "../../environment";
+import { environment } from "../../../environments/environment";
 
 @Injectable({
   providedIn: 'root'

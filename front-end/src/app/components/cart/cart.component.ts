@@ -6,7 +6,7 @@ import {CartService} from "../../services/cart/cart.service";
 import {Router, RouterLink, RouterLinkActive} from "@angular/router";
 import {ConfirmationService, MessageService} from "primeng/api";
 import {BadgeDirective} from "primeng/badge";
-import {environment} from "../../environment";
+import { environment } from "../../../environments/environment";
 import {Button} from "primeng/button";
 
 @Component({

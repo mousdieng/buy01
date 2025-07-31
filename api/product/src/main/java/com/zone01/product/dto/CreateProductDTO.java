@@ -1,9 +1,11 @@
 package com.zone01.product.dto;
 
+import com.zone01.product.product.Products;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.text.StringEscapeUtils;
 
 @Data
 @AllArgsConstructor
@@ -30,6 +32,21 @@ public class CreateProductDTO {
     @Positive(message = "Quantity must be positive")
     @DecimalMax(value = "10000", message = "Maximum quantity is 10,000")
     private Integer quantity;
+
+    public Products toProducts(String currentUserID) {
+        String escapedName = StringEscapeUtils.escapeHtml4(this.getName().toLowerCase()).replace("'", "&#39;");
+        String escapedDescription = StringEscapeUtils.escapeHtml4(this.getDescription().toLowerCase()).replace("'", "&#39;");
+
+        return Products
+                .builder()
+                .name(escapedName)
+                .price(this.getPrice())
+                .description(escapedDescription)
+                .quantity(this.getQuantity())
+                .userID(currentUserID)
+                .build();
+
+    }
 }
 
 

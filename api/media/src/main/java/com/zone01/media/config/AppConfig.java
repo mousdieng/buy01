@@ -1,6 +1,7 @@
 package com.zone01.media.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zone01.media.config.kafka.AccessValidation;
 import com.zone01.media.model.Response;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;

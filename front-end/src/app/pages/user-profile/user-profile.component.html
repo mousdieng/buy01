@@ -83,22 +83,22 @@
                                         </small>
                                     </div>
 
-                                    <div>
-                                        <label for="editEmail" class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                                            <i class="pi pi-envelope text-gray-500"></i>
-                                            Email *
-                                        </label>
-                                        <input
-                                                pInputText
-                                                id="editEmail"
-                                                formControlName="email"
-                                                class="w-full"
-                                                [class.border-red-500]="isFieldInvalid(editProfileForm, 'email')">
-                                        <small class="text-red-500 text-xs mt-1 flex items-center gap-1" *ngIf="isFieldInvalid(editProfileForm, 'email')">
-                                            <i class="pi pi-exclamation-triangle"></i>
-                                            {{ getFieldError(editProfileForm, 'email') }}
-                                        </small>
-                                    </div>
+<!--                                    <div>-->
+<!--                                        <label for="editEmail" class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">-->
+<!--                                            <i class="pi pi-envelope text-gray-500"></i>-->
+<!--                                            Email *-->
+<!--                                        </label>-->
+<!--                                        <input-->
+<!--                                                pInputText-->
+<!--                                                id="editEmail"-->
+<!--                                                formControlName="email"-->
+<!--                                                class="w-full"-->
+<!--                                                [class.border-red-500]="isFieldInvalid(editProfileForm, 'email')">-->
+<!--                                        <small class="text-red-500 text-xs mt-1 flex items-center gap-1" *ngIf="isFieldInvalid(editProfileForm, 'email')">-->
+<!--                                            <i class="pi pi-exclamation-triangle"></i>-->
+<!--                                            {{ getFieldError(editProfileForm, 'email') }}-->
+<!--                                        </small>-->
+<!--                                    </div>-->
                                 </div>
 
                                 <div class="flex justify-end">
@@ -762,7 +762,7 @@
             [closable]="true"
             [style]="{width: '600px'}"
             (onHide)="closeAvatarDialog()"
-            styleClass="!m-2 !md:m-0"
+            styleClass="!m-2 !md:m-10"
     >
 
         <div class="space-y-4">
@@ -861,7 +861,7 @@
             [(visible)]="removeOrderDialog"
             [modal]="true"
             [style]="{width: '400px'}"
-            styleClass="!m-2 !md:m-0">
+            styleClass="!m-2 !md:mx-auto">
         <div class="space-y-4">
             <p>Are you sure you want to remove this order?</p>
         </div>
@@ -869,6 +869,7 @@
             <div class="flex justify-end gap-2">
                 <p-button
                         label="Remove Order"
+                        icon="pi pi-trash"
                         severity="danger"
                         (onClick)="confirmRemoveOrder()">
                 </p-button>

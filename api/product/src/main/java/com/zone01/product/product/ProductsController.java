@@ -3,7 +3,6 @@ package com.zone01.product.product;
 import com.zone01.product.dto.ProductAvailableRequest;
 import com.zone01.product.dto.ProductSearchCriteria;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,14 +35,8 @@ public class ProductsController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "0") int size
             ) {
-        Page<Products> products = productsService.getAllProducts(page, size);
-        Response<Page<Products>> response = Response.<Page<Products>>builder()
-                .status(HttpStatus.OK.value())
-                .data(products)
-                .message("success")
-                .build();
-
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        Response<Page<Products>> response = productsService.getAllProducts(page, size);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PostMapping("/available")
@@ -51,12 +44,6 @@ public class ProductsController {
         Response<List<Products>> response = productsService.isProductAvailable(products);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
-
-//    @PutMapping("/quantity-update")
-//    public ResponseEntity<Response<List<Products>>> updateProductQuantities(@RequestBody List<ProductAvailableRequest> products) {
-//        Response<List<Products>> response = productsService.updateProductQuantities(products);
-//        return ResponseEntity.status(response.getStatus()).body(response);
-//    }
 
     @GetMapping("/search")
     public ResponseEntity<Response<Page<Products>>> searchProducts(
@@ -104,35 +91,14 @@ public class ProductsController {
                 .page(page)
                 .size(size)
                 .build();
-        Page<Products> products = productsService.searchProducts(criteria);
-        Response<Page<Products>> response = Response.<Page<Products>>builder()
-                .status(HttpStatus.OK.value())
-                .data(products)
-                .message("success")
-                .build();
-
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        Response<Page<Products>> response = productsService.searchProducts(criteria);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Response<Products>> getProductById(@PathVariable String id) {
-        return productsService.getProductById(id)
-                .map(product -> {
-                    Response<Products> response = Response.<Products>builder()
-                            .status(HttpStatus.OK.value())
-                            .data(product)
-                            .message("success")
-                            .build();
-                    return ResponseEntity.status(HttpStatus.OK).body(response);
-                })
-                .orElseGet(() -> {
-                    Response<Products> response = Response.<Products>builder()
-                            .status(HttpStatus.NOT_FOUND.value())
-                            .data(null)
-                            .message("Product not found")
-                            .build();
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-                });
+        var response = productsService.getProductById(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @GetMapping("/users/{id}")
@@ -141,38 +107,28 @@ public class ProductsController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "0") int size
     ) {
-        Page<Products> product = productsService.getProductByUserId(id, page, size);
-        Response<Page<Products>> response = Response.<Page<Products>>builder()
-                .status(HttpStatus.OK.value())
-                .data(product)
-                .message("success")
-                .build();
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        Response<Page<Products>> response = productsService.getProductByUserId(id, page, size);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PostMapping("/")
     public ResponseEntity<Response<Products>> createProduct(@Validated @RequestBody CreateProductDTO product, HttpServletRequest request) {
-        Products createdProduct = productsService.createProduct(product, request);
-        Response<Products> response = Response.<Products>builder()
-                .status(HttpStatus.CREATED.value())
-                .data(createdProduct)
-                .message("success")
-                .build();
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        Response<Products> response = productsService.createProduct(product, request);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Response<Object>> updateProduct(
+    public ResponseEntity<Response<Products>> updateProduct(
             @PathVariable String id,
             @RequestBody UpdateProductsDTO updateProductsDTO,
             HttpServletRequest request) {
-        Response<Object> updatedProduct = productsService.updateProduct(request, id, updateProductsDTO);
-        return ResponseEntity.status(updatedProduct.getStatus()).body(updatedProduct);
+        Response<Products> response = productsService.updateProduct(request, id, updateProductsDTO);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Response<Object>> deleteProduct(@PathVariable String id, HttpServletRequest request) {
-        Response<Object> deletedProduct = productsService.deleteProduct(id, request);
-        return ResponseEntity.status(deletedProduct.getStatus()).body(deletedProduct);
+    public ResponseEntity<Response<Products>> deleteProduct(@PathVariable String id, HttpServletRequest request) {
+        Response<Products> response = productsService.deleteProduct(id, request);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 }

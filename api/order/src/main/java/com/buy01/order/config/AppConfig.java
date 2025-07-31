@@ -1,12 +1,12 @@
 package com.buy01.order.config;
 
+import com.buy01.order.config.kafka.AccessValidation;
 import com.buy01.order.model.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.web.config.EnableSpringDataWebSupport;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 
 @Configuration

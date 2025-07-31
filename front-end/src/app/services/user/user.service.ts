@@ -4,7 +4,7 @@ import { catchError, map, Observable, throwError } from "rxjs";
 import { TokenService } from "../token/token.service";
 import { MediaService } from "../media/media.service";
 import { ApiResponse, PaginatedResponse, Product, Tokens, User } from "../../types";
-import {environment} from "../../environment";
+import { environment } from "../../../environments/environment";
 import {AuthService} from "../auth/auth.service";
 
 @Injectable({

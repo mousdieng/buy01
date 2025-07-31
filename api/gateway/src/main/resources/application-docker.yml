@@ -3,7 +3,7 @@ spring:
     activate:
       on-profile: docker
   application:
-    name: gateways
+    name: gateway
   cloud:
     gateway:
       globalcors:
@@ -11,7 +11,9 @@ spring:
           '[/**]':
             allowedOrigins:
               - "http://localhost:4200"
+              - "https://localhost:4200"
               - "https://front-end:4200"
+              - "http://front-end:4200"
             allowedMethods:
               - GET
               - POST
@@ -23,20 +25,24 @@ spring:
             allowCredentials: true
 
       routes:
-        - id: users
-          uri: http://users:8083
+        - id: user
+          uri: http://user:9001
           predicates:
-            - Path=/api/v1/users/**
-        - id: products
-          uri: http://products:8084
+            - Path=/api/v1/user/**
+        - id: product
+          uri: http://product:9002
           predicates:
-            - Path=/api/v1/products/**
+            - Path=/api/v1/product/**
         - id: media
-          uri: http://media:8085
+          uri: http://media:9003
           predicates:
             - Path=/api/v1/media/**
+        - id: order
+          uri: http://order:9004
+          predicates:
+            - Path=/api/v1/order/**
 server:
-  port: 8082
+  port: 9000
   ssl:
     key-store: classpath:keystore.p12
     key-store-password: password

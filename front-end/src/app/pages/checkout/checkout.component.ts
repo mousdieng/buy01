@@ -26,7 +26,7 @@ import {OrderService} from "../../services/order/order.service";
 import {OrderFormComponent} from "../../components/order-form/order-form.component";
 import {Tag} from "primeng/tag";
 import {Tooltip} from "primeng/tooltip";
-import {environment} from "../../environment";
+import { environment } from "../../../environments/environment";
 
 @Component({
   selector: 'app-checkout',
@@ -62,7 +62,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   checkoutForm: FormGroup;
   checkoutState: CheckoutState;
-  user: UserPayload | null = null;
+  // user: UserPayload | null = null;
 
   status = {
     isCartEmpty: false,
@@ -76,7 +76,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       public router: Router,
       private messageService: MessageService,
       private confirmationService: ConfirmationService,
-      private authService: AuthService,
+      // private authService: AuthService,
       private checkoutService: CheckoutService,
       private orderService: OrderService
   ) {

@@ -5,7 +5,7 @@ import { TokenService } from '../token/token.service';
 import { Router } from '@angular/router';
 import {ApiResponse, TokenPayload, Tokens, User, UserLoginRequest, UserPayload} from "../../types";
 import { take } from "rxjs/operators";
-import { environment } from "../../environment";
+import { environment } from "../../../environments/environment";
 
 @Injectable({
     providedIn: 'root'

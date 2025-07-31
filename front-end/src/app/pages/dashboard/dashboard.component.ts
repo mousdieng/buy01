@@ -1,8 +1,8 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import { AvatarModule } from 'primeng/avatar';
 import { CommonModule } from '@angular/common';
-import {ACTION, PaginatedResponse, Product, ProductMedia, ToastMessage, UserPayload} from '../../types';
-import {TableModule, TablePageEvent} from 'primeng/table';
+import {ACTION, PaginatedResponse, ProductMedia, ToastMessage, UserPayload} from '../../types';
+import {TableModule} from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 
 import { TagModule } from 'primeng/tag';
@@ -11,22 +11,22 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { DropdownModule } from 'primeng/dropdown';
-import {MenuItem, MessageService} from 'primeng/api';
+import {MessageService} from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
-import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import {EditProductComponent} from "../../components/edit-product/edit-product.component";
 import {AddProductComponent} from "../../components/add-product/add-product.component";
 import {AuthService} from "../../services/auth/auth.service";
-import {BehaviorSubject, combineLatest, flatMap, Observable, of, startWith, switchMap, takeUntil} from "rxjs";
+import {Observable} from "rxjs";
 import {ProductService} from "../../services/product/product.service";
 import {DeleteProductComponent} from "../../components/delete-product/delete-product.component";
 import {MediaLayoutComponent} from "../../components/media-layout/media-layout.component";
-import {catchError, finalize, map} from "rxjs/operators";
 import {ToastModule} from "primeng/toast";
 import {Router} from "@angular/router";
 import {TextPreviewComponent} from "../../components/text-preview/text-preview.component";
 import {Paginator, PaginatorState} from "primeng/paginator";
-import {environment} from "../../environment";
+import { environment } from "../../../environments/environment";
+import {defaultPaginatedResponse} from "../../utils";
 
 @Component({
     selector: 'app-dashboard',
@@ -38,12 +38,15 @@ import {environment} from "../../environment";
         MenuModule, AddProductComponent, EditProductComponent, DeleteProductComponent, MediaLayoutComponent, ToastModule, TextPreviewComponent, Paginator],
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.css',
-    providers: [MessageService] // Ensure MessageService is provided here
+    providers: [MessageService]
 })
 export class DashboardComponent implements OnInit {
     readonly ACTION = ACTION;
+
     user$: Observable<UserPayload>;
-    products: PaginatedResponse<ProductMedia> | null = null;
+    user: UserPayload | null = null;
+
+    products: PaginatedResponse<ProductMedia> = defaultPaginatedResponse<ProductMedia>();
     currentPage: number = 0;
     pageSize: number = 10;
     loading: boolean = false
@@ -59,6 +62,10 @@ export class DashboardComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.user$
+            .subscribe(user => {
+                this.user = user;
+            })
         this.loadProducts()
     }
 
@@ -67,32 +74,24 @@ export class DashboardComponent implements OnInit {
     }
 
     loadProducts(): void {
-        this.user$
-            .pipe(
-                switchMap(user => {
-                    if (!user.isAuthenticated) return of(null)
-                    return this.productService.getProductsWithMediaByUserId(user.id, this.currentPage, this.pageSize)
-                })
-            )
+        if (!this.user) return
+        this.productService.getProductsWithMediaByUserId(this.user.id, this.currentPage, this.pageSize)
             .subscribe({
                 next: (response) => {
-                    if (!response) {
-                        this.router.navigate(['/auth/sign-in']); // Redirect to login if user is null
-                        return
-                    }
+                    console.log(response)
                     this.products = response.data;
                 },
                 error: (err) => {
-                    console.error('Error loading products:', err);
-                    this.router.navigate(['/error', {
-                        message: err?.error?.message || "Failed to load products",
-                        status: err?.error?.status || 500
-                    }])
+                    this.products = defaultPaginatedResponse<ProductMedia>();
+                    this.messageService.add({
+                        severity: "error",
+                        summary: 'Error Fetching Product',
+                        detail: err?.error?.message || 'Failed to load products'
+                    })
                 }
             });
     }
 
-    // Handle the "Next Page" action
     onNextPage(currentPage: number, totalPages: number): void {
         if (currentPage < totalPages - 1) {
             this.currentPage = currentPage + 1;

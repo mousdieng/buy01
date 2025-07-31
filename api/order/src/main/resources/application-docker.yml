@@ -1,0 +1,24 @@
+
+spring:
+  config:
+    activate:
+      on-profile: docker
+  application:
+    name: order
+
+  kafka:
+    bootstrap-servers: 172.20.0.1:9092
+
+  data:
+    mongodb:
+      authentication-database: admin
+      uri: mongodb://user:password@172.20.0.1:27017/buy01?authSource=admin
+      auto-index-creation: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://172.20.0.1:8761/eureka/
+
+server:
+  port: 9004

@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.text.StringEscapeUtils;
-import org.springframework.http.HttpStatus;
 
 import java.util.function.Predicate;
 
@@ -19,11 +18,11 @@ public class UpdateProductsDTO {
     private Double price;
     private Integer quantity;
 
-    public Response<Object> applyUpdates(Products product) {
+    public Response<Products> applyUpdates(Products product) {
         boolean isValueUpdated = false;
 
         if (this.name != null && !this.name.isEmpty()) {
-            Response<Object> validationResponse = validateField("name", this.name,
+            Response<Products> validationResponse = validateField("name", this.name,
                     value -> value != null &&
                             value.length() >= 2 &&
                             value.length() <= 50 &&
@@ -36,7 +35,7 @@ public class UpdateProductsDTO {
         }
 
         if (this.description != null && !this.description.isEmpty()) {
-            Response<Object> validationResponse = validateField("description", this.description,
+            Response<Products> validationResponse = validateField("description", this.description,
                     value -> value != null &&
                             value.length() >= 10 &&
                             value.length() <= 255 &&
@@ -51,7 +50,7 @@ public class UpdateProductsDTO {
 
         // Price update
         if (this.price != null) {
-            Response<Object> validationResponse = validateField("price", this.price,
+            Response<Products> validationResponse = validateField("price", this.price,
                     value -> value != null &&
                             value >= 0.01 &&
                             value <= 100000.00,
@@ -64,7 +63,7 @@ public class UpdateProductsDTO {
 
         // Quantity update
         if (this.quantity != null) {
-            Response<Object> validationResponse = validateField("quantity", this.quantity,
+            Response<Products> validationResponse = validateField("quantity", this.quantity,
                     value -> value != null &&
                             value > 0 &&
                             value <= 10000,
@@ -75,25 +74,16 @@ public class UpdateProductsDTO {
             isValueUpdated = true;
         }
 
-        if (!isValueUpdated) {
-            return  Response.<Object>builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .message("No value is submitted.")
-                    .data(null)
-                    .build();
-        }
-
-        return null;
+        return Response.when(
+                !isValueUpdated,
+                () -> Response.badRequest("No value is submitted.")
+        );
     }
 
-    private <T> Response<Object> validateField(String fieldName, T value, Predicate<T> validator, String errorMessage) {
-        if (value == null || !validator.test(value)) {
-            return Response.<Object>builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .message(fieldName + ": " + errorMessage)
-                    .data(null)
-                    .build();
-        }
-        return null;
+    private <T> Response<Products> validateField(String fieldName, T value, Predicate<T> validator, String errorMessage) {
+        return Response.when(
+                value == null || !validator.test(value),
+                () -> Response.badRequest(fieldName + ": " + errorMessage)
+        );
     }
 }

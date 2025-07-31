@@ -8,10 +8,12 @@ import { ProductComponent } from "../../../components/product/product.component"
 import { Paginator, PaginatorState } from "primeng/paginator";
 import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
 import { BehaviorSubject, debounceTime, distinctUntilChanged, takeUntil, Subject } from "rxjs";
-import { MultiSelect } from "primeng/multiselect";
 import { Slider } from "primeng/slider";
 import { InputText } from "primeng/inputtext";
-import {Dropdown, DropdownModule} from "primeng/dropdown";
+import {DropdownModule} from "primeng/dropdown";
+import {Toast} from "primeng/toast";
+import {MessageService} from "primeng/api";
+import {defaultPaginatedResponse} from "../../../utils";
 
 interface PriceRange {
     min: number;
@@ -44,24 +46,23 @@ interface FilterState {
         InputText,
         DropdownModule,
         NgClass,
-        FormsModule
+        FormsModule,
+        Toast
     ],
+    providers: [MessageService],
     templateUrl: './product-list.component.html',
     styleUrl: './product-list.component.css'
 })
 export class ProductListComponent implements OnInit, OnDestroy {
-    products: PaginatedResponse<ProductMedia> | null = null;
+    products: PaginatedResponse<ProductMedia> = defaultPaginatedResponse<ProductMedia>();
     currentPage: number = 0;
     pageSize: number = 12;
     isLoading: boolean = false;
 
-    // Filter form and state
     filterForm: FormGroup;
     private filterSubject = new BehaviorSubject<FilterState>(this.getInitialFilterState());
     private destroy$ = new Subject<void>();
 
-    // Filter options
-    availableUsers: { label: string; value: string }[] = [];
     sortOptions = [
         { label: 'Name (A-Z)', value: 'name_asc' },
         { label: 'Name (Z-A)', value: 'name_desc' },
@@ -72,13 +73,11 @@ export class ProductListComponent implements OnInit, OnDestroy {
         { label: 'Recently Added', value: 'created_desc' }
     ];
 
-    // Price and quantity bounds
     priceRange: number[] = [0, 1000];
     quantityRange: number[] = [0, 100];
     maxPrice: number = 1000;
     maxQuantity: number = 100;
 
-    // UI state
     showFilters: boolean = false;
     activeFiltersCount: number = 0;
 
@@ -86,7 +85,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
         private productService: ProductService,
         private mediaService: MediaService,
         private router: Router,
-        private fb: FormBuilder
+        private fb: FormBuilder,
+        private messageService: MessageService,
     ) {
         this.filterForm = this.createFilterForm();
     }
@@ -125,7 +125,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
     }
 
     private setupFilters(): void {
-        // Watch for form changes
         this.filterForm.valueChanges.pipe(
             debounceTime(300),
             distinctUntilChanged(),
@@ -175,8 +174,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
     }
 
     private loadProductBounds(): void {
-        // This would typically come from an API call to get min/max values
-        // For now, using default values - replace with actual service call
         this.maxPrice = 1000;
         this.maxQuantity = 100;
         this.priceRange = [0, this.maxPrice];
@@ -206,11 +203,14 @@ export class ProductListComponent implements OnInit, OnDestroy {
                     this.isLoading = false;
                 },
                 error: (err) => {
+                    console.log(err);
                     this.isLoading = false;
-                    this.router.navigate(['/error', {
-                        message: err?.error?.message || "Failed to load products",
-                        status: err?.error?.status || 500
-                    }]);
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Fetch Product Failed',
+                        detail: err?.error?.message || "Failed to load products"
+                    })
+                    this.products = defaultPaginatedResponse<ProductMedia>();
                 }
             });
     }

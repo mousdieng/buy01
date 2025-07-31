@@ -1,19 +1,19 @@
 package com.zone01.media.media;
 
-import com.zone01.media.config.AccessValidation;
-import com.zone01.media.dto.ProductsDTO;
-import com.zone01.media.dto.UserDTO;
+import com.zone01.media.config.kafka.AccessValidation;
+import com.zone01.media.model.Role;
+import com.zone01.media.model.dto.ProductsDTO;
+import com.zone01.media.model.dto.UserDTO;
 import com.zone01.media.service.FileServices;
 import com.zone01.media.config.kafka.ProductServices;
 import com.zone01.media.model.Response;
 import jakarta.servlet.http.HttpServletRequest;
-//import jakarta.ws.rs.Path;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -23,242 +23,137 @@ public class MediaService {
     private final ProductServices productServices;
     private final FileServices fileServices;
 
-    public Optional<Media> getMediaById(String id) {
-        return mediaRepository.findById(id);
+    public Response<Media> getMediaById(String id) {
+        Media media = mediaRepository.findById(id).orElse(null);
+        return Response.when(
+                media != null,
+                () -> Response.ok(media),
+                () -> Response.notFound("Media not found!")
+        );
     }
 
     public Response<Object> getMetadataMedia(String productId, String imagePath) {
         return fileServices.getImages(productId, imagePath);
     }
 
-    public List<Media> getMediaByProductId(String id) {
-        return mediaRepository.findMediaByProductId(id);
+    public Response<List<Media>> getMediaByProductId(String id) {
+        List<Media> media = mediaRepository.findMediaByProductId(id);
+        return Response.ok(media);
     }
 
-    public Response<Object> authorization(HttpServletRequest request, String productId) {
-        Response<Object> productValidationResponse = productServices.getProductByID(productId, request);
-        if (productValidationResponse != null && productValidationResponse.getData() == null) {
+    public Response<ProductsDTO> authorization(HttpServletRequest request, String productId) {
+        Response<ProductsDTO> productValidationResponse = productServices.getProductByID(productId, request);
+        if (productValidationResponse != null && productValidationResponse.isError() || Objects.requireNonNull(productValidationResponse).getData() == null)
             return productValidationResponse;
-        }
 
-        return null;
+        ProductsDTO product = productValidationResponse.getData();
+        return Response.ok(product);
     }
 
-    public Response<Object> authorizationWhenDeleteAndUpdate(HttpServletRequest request, String mediaId) {
+    public Response<Media> authorizationWhenDeleteAndUpdate(HttpServletRequest request, String mediaId) {
         Optional<Media> existingMedia = mediaRepository.findById(mediaId);
-        if (existingMedia.isEmpty()) {
-            return Response.<Object>builder()
-                    .status(HttpStatus.NOT_FOUND.value())
-                    .message("Media not found")
-                    .data(null)
-                    .build();
-        }
+        if (existingMedia.isEmpty())
+            return Response.notFound("Media not found");
 
         Media media = existingMedia.get();
-        Response<Object> authorizationResponse = authorization(request, media.getProductId());
-        if (authorizationResponse != null) {return authorizationResponse;}
-
-        return Response.<Object>builder()
-                .data(media)
-                .message("ok")
-                .status(HttpStatus.OK.value())
-                .build();
+        Response<ProductsDTO> response = this.authorization(request, media.getProductId());
+        return Response.when(
+                response.isError(),
+                () -> Response.mapper(response),
+                () -> Response.ok(media)
+        );
     }
 
 
-    public Response<Object> createMedia(
-            String productId,
-            List<MultipartFile> files,
-            HttpServletRequest request
-    ) {
+    public Response<List<Media>> createMedia(String productId, List<MultipartFile> files, HttpServletRequest request) {
         try {
 
             Response<Object> mediaValidationResponse = fileServices.validateFiles(files, productId, false);
-            if (mediaValidationResponse != null) {
-                return mediaValidationResponse;
-            }
+            if (mediaValidationResponse != null) return Response.mapper(mediaValidationResponse);
 
-            Response<Object> authorizationResponse = authorization(request, productId);
-            if (authorizationResponse != null) {return authorizationResponse;}
+            Response<ProductsDTO> authorizationResponse = authorization(request, productId);
+            if (authorizationResponse.isError()) return Response.mapper(authorizationResponse);
 
-            // Validate and save each file
-            List<String> savedFiles = fileServices.saveFiles(files, productId);
-            for (String filename : savedFiles) {
+            List<String> savedFilesName = fileServices.saveFiles(files, productId);
+            var savedFiles = savedFilesName.stream().map(filename -> {
                 Media newMedia = Media.builder()
                         .imagePath(filename)
                         .productId(productId)
                         .build();
 
-                mediaRepository.save(newMedia);
-            }
+                return mediaRepository.save(newMedia);
+            }).collect(Collectors.toList());
 
-            return Response.<Object>builder()
-                    .status(HttpStatus.CREATED.value())
-                    .message("Media uploaded successfully")
-                    .data(savedFiles)
-                    .build();
+            return Response.created(savedFiles);
 
         } catch (Exception e) {
-            return Response.<Object>builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .message("Media upload failed: " + e.getMessage())
-                    .data(null)
-                    .build();
+            return Response.badRequest("Media upload failed: " + e.getMessage());
         }
     }
 
-    public Response<Object> updateMedia(
-            HttpServletRequest request,
-            String mediaId,
-            MultipartFile newFile
-    ) {
+    public Response<Media> updateMedia(HttpServletRequest request, String mediaId, MultipartFile newFile) {
         try {
-            Response<Object> authorizationResponse = authorizationWhenDeleteAndUpdate(request, mediaId);
-            if (authorizationResponse.getStatus() != HttpStatus.OK.value()) {return authorizationResponse;}
+            Response<Media> authorizationResponse = authorizationWhenDeleteAndUpdate(request, mediaId);
+            if (authorizationResponse.isError()) return authorizationResponse;
 
-            Media media = (Media) authorizationResponse.getData();
+            Media media = authorizationResponse.getData();
             Response<Object> fileValidationResponse = fileServices.validateFiles(newFile, "", true);
-            if (fileValidationResponse != null) {
-                return fileValidationResponse;
-            }
+            if (fileValidationResponse != null)
+                return Response.mapper(fileValidationResponse);
+
 
             List<String> newFilename = fileServices.saveFiles(newFile, media.getProductId());
             Response<Object> mediaDeleteResponse= fileServices.deleteOldFile(media.getProductId(), media.getImagePath());
-            if (mediaDeleteResponse != null) { return mediaDeleteResponse; }
+            if (mediaDeleteResponse != null)  return Response.mapper(mediaDeleteResponse);
             media.setImagePath(newFilename.get(0));
 
-            // Save updated media
             Media updatedMedia = mediaRepository.save(media);
-            return Response.<Object>builder()
-                    .status(HttpStatus.OK.value())
-                    .message("Media updated successfully")
-                    .data(updatedMedia)
-                    .build();
+            return Response.ok(updatedMedia);
 
         } catch (Exception e) {
-            return Response.<Object>builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .message("Media update failed: " + e.getMessage())
-                    .data(null)
-                    .build();
+            return Response.badRequest("Media update failed: " + e.getMessage());
         }
     }
 
-    public Response<Object> deleteMedia(String mediaId, HttpServletRequest request) {
+    public Response<Media> deleteMedia(String mediaId, HttpServletRequest request) {
         try {
-            Response<Object> authorizationResponse = authorizationWhenDeleteAndUpdate(request, mediaId);
-            if (authorizationResponse.getStatus() != HttpStatus.OK.value()) {return authorizationResponse;}
+            Response<Media> authorizationResponse = authorizationWhenDeleteAndUpdate(request, mediaId);
+            if (authorizationResponse.isError()) return authorizationResponse;
 
-            Media media = (Media) authorizationResponse.getData();
+            Media media = authorizationResponse.getData();
 
             Response<Object> deleteResponse = fileServices.deleteOldFile(media.getProductId(), media.getImagePath());
-            if (deleteResponse != null) { return deleteResponse; }
+            if (deleteResponse != null) return Response.mapper(deleteResponse);
             mediaRepository.deleteById(media.getId());
 
-            return Response.<Object>builder()
-                    .status(HttpStatus.OK.value())
-                    .message("Media deleted successfully")
-                    .data(media)
-                    .build();
-
+            return Response.ok(media);
         } catch (Exception e) {
-            return Response.<Object>builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .message("Media update failed: " + e.getMessage())
-                    .data(null)
-                    .build();
+            return Response.badRequest("Media update failed: " + e.getMessage());
         }
     }
 
-    public Response<Object> deleteMediaByProductIds(List<String> productIds) {
+    public Response<List<Media>> deleteMediaByProductIds(List<String> productIds) {
         try {
-            if (productIds == null || productIds.isEmpty()) {
-                return Response.builder()
-                        .status(HttpStatus.BAD_REQUEST.value())
-                        .data(null)
-                        .message("No product IDs provided")
-                        .build();
-            }
-            List<Media> mediaToDelete = mediaRepository.findMediaByProductIdIn(productIds);
-            if (mediaToDelete.isEmpty()) {
-                return Response.<Object>builder()
-                        .status(HttpStatus.OK.value())
-                        .message("No media found for the given product IDs.")
-                        .data(null)
-                        .build();
-            }
+            if (productIds == null || productIds.isEmpty())
+                return Response.badRequest("No product IDs provided");
 
-            // Delete media files from filesystem
+            List<Media> mediaToDelete = mediaRepository.findMediaByProductIdIn(productIds);
+            if (mediaToDelete.isEmpty())
+                return Response.ok(mediaToDelete,"No media found for the given product IDs.");
+
             for (Media media : mediaToDelete) {
                 try {
                     fileServices.deleteOldFile(media.getProductId(), media.getImagePath());
                 } catch (Exception e) {
-                    return Response.<Object>builder()
-                            .status(HttpStatus.BAD_REQUEST.value())
-                            .message("File deletion failed for product ID " + media.getProductId() + ": " + e.getMessage())
-                            .data(null)
-                            .build();
+                    return Response.badRequest("File deletion failed for product ID " + media.getProductId() + ": " + e.getMessage());
                 }
             }
 
-            // Delete from database
             mediaRepository.deleteAll(mediaToDelete);
-
-            return Response.<Object>builder()
-                    .status(HttpStatus.OK.value())
-                    .message("All media for the provided product IDs deleted successfully.")
-                    .data(null)
-                    .build();
+            return Response.ok(mediaToDelete);
 
         } catch (Exception e) {
-            return Response.<Object>builder()
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                    .message("Media deletion failed: " + e.getMessage())
-                    .data(null)
-                    .build();
+            return Response.badRequest("Media deletion failed: " + e.getMessage());
         }
     }
-
-
-//    public Response<Object> deleteMediaByProductIds(List<String> productIds) {
-//        try {
-//            List<Media> mediaToDelete = mediaRepository.findMediaByProductId(productIds);
-//            if (mediaToDelete.isEmpty()) {
-//                return Response.<Object>builder()
-//                        .status(HttpStatus.OK.value())
-//                        .message("ok")
-//                        .data(null)
-//                        .build();
-//            }
-//
-//            // Delete files from filesystem
-//            for (Media media : mediaToDelete) {
-//                try {
-//                    fileServices.deleteOldFile(media.getProductId(), media.getImagePath());
-//                } catch (Exception e) {
-//                    return Response.<Object>builder()
-//                            .status(HttpStatus.BAD_REQUEST.value())
-//                            .message("Media delete failed: " + e.getMessage())
-//                            .data(null)
-//                            .build();
-//                }
-//            }
-//
-//            // Delete media records from database
-//            mediaRepository.deleteAll(mediaToDelete);
-//
-//            return Response.<Object>builder()
-//                    .status(HttpStatus.OK.value())
-//                    .message("All media for the product deleted successfully")
-//                    .data(null)
-//                    .build();
-//
-//        } catch (Exception e) {
-//            return Response.<Object>builder()
-//                    .status(HttpStatus.BAD_REQUEST.value())
-//                    .message("Media deletion failed: " + e.getMessage())
-//                    .data(null)
-//                    .build();
-//        }
-//    }
 }

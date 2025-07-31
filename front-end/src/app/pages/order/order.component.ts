@@ -19,7 +19,7 @@ import {ConfirmDialog} from "primeng/confirmdialog";
 import {Toast} from "primeng/toast";
 import {ActivatedRoute, Router} from "@angular/router";
 import {MediaService} from "../../services/media/media.service";
-import {environment} from "../../environment";
+import { environment } from "../../../environments/environment";
 
 import {CheckoutService} from "../../services/checkout/checkout.service";
 import {OrderFormComponent} from "../../components/order-form/order-form.component";

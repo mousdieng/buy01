@@ -1,4 +1,6 @@
 <div class="w-full min-h-screen bg-gradient-to-b from-indigo-50 to-white px-5 py-10">
+    <p-toast></p-toast>
+
     <!-- Header Section -->
     <div class="mb-8">
         <h2 class="text-sm text-indigo-600 font-medium tracking-wide mb-2">Shop with confidence</h2>
@@ -70,156 +72,156 @@
     </div>
 
     <!-- Advanced Filters Panel -->
-        <form [formGroup]="filterForm" class="p-6">
+    <form [formGroup]="filterForm" class="p-6">
         <div *ngIf="showFilters" class="mb-8 bg-white rounded-xl shadow-md border border-indigo-100 overflow-hidden">
             <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
 
-                    <!-- Price Range Filter -->
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium text-gray-700">Price Range</label>
-                            <button (click)="clearPriceFilter()" class="text-xs text-indigo-600 hover:text-indigo-800">
-                                Reset
-                            </button>
+                <!-- Price Range Filter -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-gray-700">Price Range</label>
+                        <button (click)="clearPriceFilter()" class="text-xs text-indigo-600 hover:text-indigo-800">
+                            Reset
+                        </button>
+                    </div>
+                    <div class="px-2">
+                        <p-slider
+                                [(ngModel)]="priceRange"
+                                [ngModelOptions]="{standalone: true}"
+                                (onSlideEnd)="onPriceRangeChange($event.values)"
+                                [range]="true"
+                                [min]="0"
+                                [max]="maxPrice"
+                                [step]="10"
+                                class="w-full">
+                        </p-slider>
+                        <div class="flex justify-between text-xs text-gray-500 mt-2">
+                            <span>{{formatPrice(priceRange[0])}}</span>
+                            <span>{{formatPrice(priceRange[1])}}</span>
                         </div>
-                        <div class="px-2">
-                            <p-slider
-                                    [(ngModel)]="priceRange"
-                                    [ngModelOptions]="{standalone: true}"
-                                    (onSlideEnd)="onPriceRangeChange($event.values)"
-                                    [range]="true"
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs text-gray-600">Min Price</label>
+                            <input
+                                    type="number"
+                                    pInputText
+                                    formControlName="minPrice"
+                                    class="w-full text-sm mt-1 p-2 border border-gray-200 rounded focus:border-indigo-500"
                                     [min]="0"
                                     [max]="maxPrice"
-                                    [step]="10"
-                                    class="w-full">
-                            </p-slider>
-                            <div class="flex justify-between text-xs text-gray-500 mt-2">
-                                <span>{{formatPrice(priceRange[0])}}</span>
-                                <span>{{formatPrice(priceRange[1])}}</span>
-                            </div>
+                            />
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-xs text-gray-600">Min Price</label>
-                                <input
-                                        type="number"
-                                        pInputText
-                                        formControlName="minPrice"
-                                        class="w-full text-sm mt-1 p-2 border border-gray-200 rounded focus:border-indigo-500"
-                                        [min]="0"
-                                        [max]="maxPrice"
-                                />
-                            </div>
-                            <div>
-                                <label class="text-xs text-gray-600">Max Price</label>
-                                <input
-                                        type="number"
-                                        pInputText
-                                        formControlName="maxPrice"
-                                        class="w-full text-sm mt-1 p-2 border border-gray-200 rounded focus:border-indigo-500"
-                                        [min]="0"
-                                        [max]="maxPrice"
-                                />
-                            </div>
+                        <div>
+                            <label class="text-xs text-gray-600">Max Price</label>
+                            <input
+                                    type="number"
+                                    pInputText
+                                    formControlName="maxPrice"
+                                    class="w-full text-sm mt-1 p-2 border border-gray-200 rounded focus:border-indigo-500"
+                                    [min]="0"
+                                    [max]="maxPrice"
+                            />
                         </div>
                     </div>
+                </div>
 
-                    <!-- Quantity Range Filter -->
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium text-gray-700">Stock Range</label>
-                            <button (click)="clearQuantityFilter()" class="text-xs text-indigo-600 hover:text-indigo-800">
-                                Reset
-                            </button>
+                <!-- Quantity Range Filter -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-gray-700">Stock Range</label>
+                        <button (click)="clearQuantityFilter()" class="text-xs text-indigo-600 hover:text-indigo-800">
+                            Reset
+                        </button>
+                    </div>
+                    <div class="px-2">
+                        <p-slider
+                                [(ngModel)]="quantityRange"
+                                [ngModelOptions]="{standalone: true}"
+                                (onSlideEnd)="onQuantityRangeChange($event.values)"
+                                [range]="true"
+                                [min]="0"
+                                [max]="maxQuantity"
+                                [step]="1"
+                                class="w-full">
+                        </p-slider>
+                        <div class="flex justify-between text-xs text-gray-500 mt-2">
+                            <span>{{quantityRange[0]}} items</span>
+                            <span>{{quantityRange[1]}} items</span>
                         </div>
-                        <div class="px-2">
-                            <p-slider
-                                    [(ngModel)]="quantityRange"
-                                    [ngModelOptions]="{standalone: true}"
-                                    (onSlideEnd)="onQuantityRangeChange($event.values)"
-                                    [range]="true"
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs text-gray-600">Min Stock</label>
+                            <input
+                                    type="number"
+                                    pInputText
+                                    formControlName="minQuantity"
+                                    class="w-full text-sm mt-1 p-2 border border-gray-200 rounded focus:border-indigo-500"
                                     [min]="0"
                                     [max]="maxQuantity"
-                                    [step]="1"
-                                    class="w-full">
-                            </p-slider>
-                            <div class="flex justify-between text-xs text-gray-500 mt-2">
-                                <span>{{quantityRange[0]}} items</span>
-                                <span>{{quantityRange[1]}} items</span>
-                            </div>
+                            />
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-xs text-gray-600">Min Stock</label>
-                                <input
-                                        type="number"
-                                        pInputText
-                                        formControlName="minQuantity"
-                                        class="w-full text-sm mt-1 p-2 border border-gray-200 rounded focus:border-indigo-500"
-                                        [min]="0"
-                                        [max]="maxQuantity"
-                                />
-                            </div>
-                            <div>
-                                <label class="text-xs text-gray-600">Max Stock</label>
-                                <input
-                                        type="number"
-                                        pInputText
-                                        formControlName="maxQuantity"
-                                        class="w-full text-sm mt-1 p-2 border border-gray-200 rounded focus:border-indigo-500"
-                                        [min]="0"
-                                        [max]="maxQuantity"
-                                />
-                            </div>
+                        <div>
+                            <label class="text-xs text-gray-600">Max Stock</label>
+                            <input
+                                    type="number"
+                                    pInputText
+                                    formControlName="maxQuantity"
+                                    class="w-full text-sm mt-1 p-2 border border-gray-200 rounded focus:border-indigo-500"
+                                    [min]="0"
+                                    [max]="maxQuantity"
+                            />
                         </div>
                     </div>
-
-                    <!-- Sort Options -->
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium text-gray-700">Sort By</label>
-                            <button (click)="resetSort()" class="text-xs text-indigo-600 hover:text-indigo-800">
-                                Reset
-                            </button>
-                        </div>
-                        <p-dropdown
-                                formControlName="sortBy"
-                                [options]="sortOptions"
-                                placeholder="Select sorting..."
-                                class="w-full">
-                        </p-dropdown>
-                    </div>
-
                 </div>
+
+                <!-- Sort Options -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-gray-700">Sort By</label>
+                        <button (click)="resetSort()" class="text-xs text-indigo-600 hover:text-indigo-800">
+                            Reset
+                        </button>
+                    </div>
+                    <p-dropdown
+                            formControlName="sortBy"
+                            [options]="sortOptions"
+                            placeholder="Select sorting..."
+                            class="w-full">
+                    </p-dropdown>
+                </div>
+
+            </div>
 
             <!-- Filter Actions -->
             <div class="mt-6 pt-6 border-t border-gray-200 flex flex-col sm:flex-row gap-3 justify-between items-center">
-                    <div class="text-sm text-gray-600">
+                <div class="text-sm text-gray-600">
                         <span *ngIf="products">
-                            Showing {{products.content.length}} of {{products.page.totalElements}} products
+                            Showing {{products.content.length}} of {{products.totalElements}} products
                         </span>
-                    </div>
-                    <div class="flex gap-3">
-                        <button
-                                type="button"
-                                (click)="clearAllFilters()"
-                                class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm">
-                            Clear All Filters
-                        </button>
-                        <button
-                                type="button"
-                                (click)="toggleFilters()"
-                                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
-                            Hide Filters
-                        </button>
-                    </div>
                 </div>
+                <div class="flex gap-3">
+                    <button
+                            type="button"
+                            (click)="clearAllFilters()"
+                            class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm">
+                        Clear All Filters
+                    </button>
+                    <button
+                            type="button"
+                            (click)="toggleFilters()"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
+                        Hide Filters
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Sort Bar (when filters are hidden) -->
         <div *ngIf="!showFilters && products && products.content.length" class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="text-sm text-gray-600">
-                Showing {{products.content.length}} of {{products.page.totalElements}} products
+                Showing {{products.content.length}} of {{products.totalElements}} products
             </div>
             <div class="flex items-center gap-3">
                 <span class="text-sm text-gray-600">Sort by:</span>
@@ -231,7 +233,7 @@
                 </p-dropdown>
             </div>
         </div>
-        </form>
+    </form>
     <!-- Loading State -->
     <div *ngIf="isLoading" class="flex justify-center items-center h-64">
         <div class="flex flex-col items-center">
@@ -260,13 +262,6 @@
                     <span>Clear All Filters</span>
                 </span>
             </button>
-            <button *ngIf="!hasActiveFilters"
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl">
-                <span class="flex items-center gap-2">
-                    <i class="pi pi-bell"></i>
-                    <span>Get Notified When Products Arrive</span>
-                </span>
-            </button>
         </div>
     </div>
 
@@ -285,7 +280,7 @@
                     (onPageChange)="onPageChange($event)"
                     [first]="currentPage * pageSize"
                     [rows]="pageSize"
-                    [totalRecords]="products.page.totalElements"
+                    [totalRecords]="products.totalElements"
                     [rowsPerPageOptions]="[12, 24, 36, 48]"
                     styleClass="p-paginator-custom">
             </p-paginator>

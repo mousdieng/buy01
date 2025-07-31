@@ -1,15 +1,14 @@
 package com.zone01.product.product;
 
-import com.mongodb.client.MongoClients;
-import com.zone01.product.config.AccessValidation;
+import com.zone01.product.config.kafka.AccessValidation;
 import com.zone01.product.config.kafka.MediaServices;
 import com.zone01.product.dto.*;
 import com.zone01.product.model.Response;
+import com.zone01.product.model.Role;
 import jakarta.servlet.http.HttpServletRequest;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.text.StringEscapeUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -20,20 +19,25 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductsService {
     private final ProductsRepository productsRepository;
     private final MediaServices mediaServices;
     private final MongoTemplate mongoTemplate;
 
-    public Page<Products> getAllProducts(int page, int size) {
-        return productsRepository.findAll(PageRequest.of(page, size));
+    public Response<Page<Products>> getAllProducts(int page, int size) {
+        var products = productsRepository.findAll(PageRequest.of(page, size));
+        return Response.when(
+                products.isEmpty() || !products.hasContent(),
+                () -> Response.ok(products),
+                () -> Response.notFound("No products found!")
+        );
     }
 
     public Response<List<Products>> isProductAvailable(List<ProductAvailableRequest> dto) {
@@ -60,20 +64,11 @@ public class ProductsService {
 
         List<Products> available = grouped.getOrDefault(true, List.of());
         List<Products> unavailable = grouped.getOrDefault(false, List.of());
-
-        if (!unavailable.isEmpty()) {
-            return Response.<List<Products>>builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .message("Some products are unavailable")
-                    .data(unavailable)
-                    .build();
-        }
-
-        return Response.<List<Products>>builder()
-                .status(HttpStatus.OK.value())
-                .message("All products are available")
-                .data(available)
-                .build();
+        return Response.when(
+                unavailable.isEmpty(),
+                () -> Response.ok(available, "All products are available"),
+                () -> Response.badRequest(unavailable, "Some products are unavailable")
+        );
     }
 
     public Response<List<Products>> updateProductQuantities(Map<String, Integer> dto) {
@@ -102,144 +97,96 @@ public class ProductsService {
                 .build();
     }
 
-    public Optional<Products> getProductById(String id) {
-        return productsRepository.findById(id);
+    public Response<Products> getProductById(String id) {
+        log.info("====== Getting product by id: {} ======", id);
+        Products product = productsRepository.findById(id).orElse(null);
+        return Response.when(
+                product != null,
+                () -> Response.ok(product, "Successfully retrieved product"),
+                () -> Response.notFound("Product not found!")
+        );
     }
 
-    public List<Products> getProductById(List<String> id) {
-        return productsRepository.findByIdIn(id);
+    public Response<List<Products>> getProductById(List<String> id) {
+        List<Products> products = productsRepository.findByIdIn(id);
+        return Response.when(
+                !products.isEmpty(),
+                () -> Response.ok(products, "Successfully retrieved products"),
+                () -> Response.notFound("Product not found!")
+        );
     }
 
-    public Page<Products> getProductByUserId(String id, int page, int size) {
-        return productsRepository.findProductsByUserID(id, PageRequest.of(page, size));
+    public Response<Page<Products>> getProductByUserId(String id, int page, int size) {
+        var products = productsRepository.findProductsByUserID(id, PageRequest.of(page, size));
+        return Response.when(
+                !(products.isEmpty() || !products.hasContent()),
+                () -> Response.ok(products, "Successfully retrieved products"),
+                () -> Response.notFound("No products found!")
+        );
     }
 
-    public Products createProduct(CreateProductDTO product, HttpServletRequest request) {
+    public Response<Products> createProduct(CreateProductDTO dto, HttpServletRequest request) {
+        UserDTO currentUser = AccessValidation.getCurrentUser(request);
+        if (currentUser.getRole() != Role.SELLER) return Response.forbidden("Only sellers can create products");
+
+        Products savedProduct = productsRepository.save(dto.toProducts(currentUser.getId()));
+        return Response.created(savedProduct, "Product created successfully");
+    }
+
+    private Response<Products> authorizeAndGetProduct(HttpServletRequest request, String id) {
         UserDTO currentUser = AccessValidation.getCurrentUser(request);
 
-        String escapedName = StringEscapeUtils.escapeHtml4(product.getName().toLowerCase()).replace("'", "&#39;");
-        String escapedDescription = StringEscapeUtils.escapeHtml4(product.getDescription().toLowerCase()).replace("'", "&#39;");
+        Products product = productsRepository.findById(id).orElse(null);
+        if (product == null) return Response.notFound("Product not found!");
 
-        Products newProduct = Products
-                .builder()
-                .name(escapedName)
-                .price(product.getPrice())
-                .description(escapedDescription)
-                .quantity(product.getQuantity())
-                .userID(currentUser.getId())
-                .build();
+        if (!currentUser.getId().equals(product.getUserID()))
+            return Response.forbidden("You're not authorized to perform this action.");
 
-        return productsRepository.save(newProduct);
+        return Response.ok(product);
     }
 
-    private Response<Object> authorizeAndGetProduct(HttpServletRequest request, String id) {
-        UserDTO currentUser = AccessValidation.getCurrentUser(request);
+    public Response<Products> updateProduct(HttpServletRequest request, String id, UpdateProductsDTO updateProductsDTO) {
+        Response<Products> authorizationResponse = authorizeAndGetProduct(request, id);
+        if (authorizationResponse.isError()) return authorizationResponse;
 
-        Optional<Products> productOptional = productsRepository.findById(id);
-        if (productOptional.isEmpty()) {
-            return Response.<Object>builder()
-                    .status(HttpStatus.NOT_FOUND.value())
-                    .data(null)
-                    .message("Product not found")
-                    .build();
-        }
+        Products product = authorizationResponse.getData();
 
-        Products product = productOptional.get();
-        if (!currentUser.getId().equals(product.getUserID())) {
-            return Response.<Object>builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .data(null)
-                    .message("You're not authorized to perform this action.")
-                    .build();
-        }
+        Response<Products> updateResponse = updateProductsDTO.applyUpdates(product);
+        if (updateResponse != null) return updateResponse;
 
-        return Response.<Object>builder()
-                .status(HttpStatus.OK.value())
-                .data(productOptional.get())
-                .build();
-    }
-
-    public Response<Object> updateProduct(HttpServletRequest request, String id, UpdateProductsDTO updateProductsDTO) {
-        Response<Object> authorizationResponse = authorizeAndGetProduct(request, id);
-        if (authorizationResponse.getStatus() != HttpStatus.OK.value()) {
-            return authorizationResponse;
-        }
-
-        Products product = (Products) authorizationResponse.getData();
-
-        Response<Object> updateResponse = updateProductsDTO.applyUpdates(product);
-        if (updateResponse != null) {return updateResponse;}
-
-        // Save updated product
         Products updatedProduct = productsRepository.save(product);
-
-        // Build and return response
-        return Response.<Object>builder()
-                .status(HttpStatus.OK.value())
-                .data(updatedProduct)
-                .message("Product updated successfully")
-                .build();
+        return Response.ok(updatedProduct, "Product updated successfully");
     }
 
-    public Response<Object> deleteProduct(String id, HttpServletRequest request) {
-        // Authorize and get the product
-        Response<Object> authorizationResponse = authorizeAndGetProduct(request, id);
-        if (authorizationResponse.getStatus() != HttpStatus.OK.value()) {
-            return authorizationResponse;
-        }
+    public Response<Products> deleteProduct(String id, HttpServletRequest request) {
+        Response<Products> authorizationResponse = authorizeAndGetProduct(request, id);
+        if (authorizationResponse.isError()) return authorizationResponse;
 
-        Products product = (Products) authorizationResponse.getData();
+        Products product = authorizationResponse.getData();
         Response<Object> deletedMediaResponse = mediaServices.deleteMediaRelatedToProduct(List.of(product.getId()));
         if (deletedMediaResponse != null) {
-            return Response.<Object>builder()
-                    .status(deletedMediaResponse.getStatus())
-                    .data(null)
-                    .message(deletedMediaResponse.getMessage())
-                    .build();
+            return Response.mapper(deletedMediaResponse);
         }
-        productsRepository.deleteById(id);
 
-        // Return success response
-        return Response.<Object>builder()
-                .status(HttpStatus.OK.value())
-                .data(authorizationResponse.getData())
-                .message("Product deleted successfully")
-                .build();
+        productsRepository.deleteById(id);
+        return Response.ok(product, "Product deleted successfully");
     }
 
-    public Response<Object> deleteProductsByUserId(String userId) {
-        Optional<List<Products>> productOptional = productsRepository.findByUserID(userId);
-        if (productOptional.isEmpty()) {
-            return Response.<Object>builder()
-                    .status(HttpStatus.OK.value())
-                    .data(null)
-                    .message("Nothing to delete")
-                    .build();
-        }
+    public Response<List<Products>> deleteProductsByUserId(String userId) {
+        List<Products> products = productsRepository.findByUserID(userId).orElse(null);
+        if (products == null || products.isEmpty()) return Response.notFound("No products found!");
 
-        List<Products> products = productOptional.get();
         List<String> ids = products.stream().map(Products::getId).collect(Collectors.toList());
 
         Response<Object> deletedMediaResponse = mediaServices.deleteMediaRelatedToProduct(ids);
-        if (deletedMediaResponse != null) {
-            return Response.<Object>builder()
-                    .status(deletedMediaResponse.getStatus())
-                    .data(null)
-                    .message(deletedMediaResponse.getMessage())
-                    .build();
-        }
+        if (deletedMediaResponse != null) return Response.mapper(deletedMediaResponse);
 
         productsRepository.deleteAllById(ids);
-
-        return Response.<Object>builder()
-                .status(HttpStatus.OK.value())
-                .data(null)
-                .message("Product deleted successfully")
-                .build();
+        return Response.ok(products, "Products deleted successfully");
     }
 
 
-    public Page<Products> searchProducts(ProductSearchCriteria searchCriteria) {
+    public Response<Page<Products>> searchProducts(ProductSearchCriteria searchCriteria) {
         Query query = buildQuery(searchCriteria);
 
         // Get total count for pagination
@@ -248,9 +195,12 @@ public class ProductsService {
 
         // Create pageable
         Pageable pageable = PageRequest.of(searchCriteria.getPage(), searchCriteria.getSize());
-
-        // Return page
-        return new PageImpl<>(products, pageable, totalCount);
+        var page = new PageImpl<>(products, pageable, totalCount);
+        return Response.when(
+                !page.hasContent(),
+                () -> Response.notFound("No products found!"),
+                () -> Response.ok(page)
+        );
 
     }
 

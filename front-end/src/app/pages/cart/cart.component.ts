@@ -12,7 +12,7 @@ import {Tooltip} from "primeng/tooltip";
 import {InputNumber} from "primeng/inputnumber";
 import {Divider} from "primeng/divider";
 import {Image} from "primeng/image";
-import {environment} from "../../environment";
+import { environment } from "../../../environments/environment";
 
 @Component({
     selector: 'app-cart',

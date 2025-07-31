@@ -1,12 +1,13 @@
 package com.buy01.order.order;
 
-import com.buy01.order.config.AccessValidation;
+import com.buy01.order.config.kafka.AccessValidation;
 import com.buy01.order.model.*;
 import com.buy01.order.model.dto.CancelOrderRequestDTO;
 import com.buy01.order.model.dto.OrderItem;
 import com.buy01.order.model.dto.UserDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
     private final OrderRepository orderRepository;
     private final MongoTemplate mongoTemplate;
@@ -44,11 +46,13 @@ public class OrderService {
     }
 
     public Response<Page<Order>> getIncompleteOrdersByUserId(HttpServletRequest request, int page, int size) {
+        log.info("Retrieving incomplete orders for user");
         UserDTO currentUser = AccessValidation.getCurrentUser(request);
         if (currentUser.getRole() != Role.CLIENT) return Response.forbidden("Only clients can perform this operation");
 
         Page<Order> incompleteOrders = orderRepository.findByUserIdAndPaymentStatusOrderByCreatedAtDesc(
                 currentUser.getId(), PaymentStatus.INCOMPLETE, PageRequest.of(page, size));
+        log.info("Retrieved {} incomplete orders for user {}", incompleteOrders.getTotalElements(), currentUser.getId());
         return Response.ok(incompleteOrders, "Incomplete orders retrieved successfully");
     }
 

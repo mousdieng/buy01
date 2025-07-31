@@ -1,6 +1,6 @@
-import {ChangeDetectorRef, Component} from '@angular/core';
-import {ACTION, Media, PaginatedResponse, Product, ProductMedia, Role, ToastMessage, UserPayload} from '../../types';
-import {CommonModule, NgOptimizedImage} from '@angular/common';
+import { Component, OnInit} from '@angular/core';
+import {ACTION, PaginatedResponse, ProductMedia, ToastMessage, UserPayload} from '../../types';
+import {CommonModule} from '@angular/common';
 import { GalleriaModule } from 'primeng/galleria';
 import { FileUploadModule } from 'primeng/fileupload';
 import { ToastModule } from 'primeng/toast';
@@ -8,7 +8,7 @@ import { MessageService } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
 import {TextPreviewComponent} from "../../components/text-preview/text-preview.component";
 import {ProductService} from "../../services/product/product.service";
-import {forkJoin, Observable, of, switchMap, tap} from "rxjs";
+import {Observable, of, switchMap} from "rxjs";
 import {MediaService} from "../../services/media/media.service";
 import {AuthService} from "../../services/auth/auth.service";
 import {UploadImagesComponent} from "../../components/upload-images/upload-images.component";
@@ -16,7 +16,7 @@ import {MediaLayoutComponent} from "../../components/media-layout/media-layout.c
 import {CarouselModule} from "primeng/carousel";
 import {Router} from "@angular/router";
 import {Paginator, PaginatorState} from "primeng/paginator";
-import {filter} from "rxjs/operators";
+import {defaultPaginatedResponse} from "../../utils";
 
 
 @Component({
@@ -38,9 +38,9 @@ import {filter} from "rxjs/operators";
     styleUrl: './media-management.component.css',
     providers: [MessageService]
 })
-export class MediaManagementComponent {
+export class MediaManagementComponent implements OnInit {
     protected readonly ACTION = ACTION
-    products: PaginatedResponse<ProductMedia> | null = null;
+    products: PaginatedResponse<ProductMedia> = defaultPaginatedResponse<ProductMedia>();
     selectedProduct: ProductMedia | null = null;
     currentPage: number = 0;
     pageSize: number = 10;
@@ -115,10 +115,11 @@ export class MediaManagementComponent {
                     }
                 },
                 error: (err) => {
-                    this.router.navigate(['/error', {
-                        message: err?.error?.message || "Failed to load products",
-                        status: err?.error?.status || 500
-                    }])
+                    this.messageService.add({
+                        severity: "error",
+                        summary: 'Error Fetching Product',
+                        detail: err?.error?.message || 'Failed to load products'
+                    })
                 }
             });
     }
@@ -136,7 +137,6 @@ export class MediaManagementComponent {
     }
 
     onPageChange(event: PaginatorState): void {
-        // Extract pagination details from event
         if (event.page !== undefined) {
             this.currentPage = event.page;
         }

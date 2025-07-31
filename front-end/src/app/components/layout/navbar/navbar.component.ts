@@ -8,7 +8,7 @@ import { UserPayload } from '../../../types';
 import { CartService } from "../../../services/cart/cart.service";
 import { AuthService } from "../../../services/auth/auth.service";
 import {filter} from "rxjs/operators";
-import {environment} from "../../../environment";
+import { environment } from "../../../../environments/environment";
 import {CartComponent} from "../../cart/cart.component";
 
 @Component({

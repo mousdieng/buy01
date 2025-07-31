@@ -1,12 +1,22 @@
 
 export interface PaginatedResponse<T> {
-    content: T[]; // The actual list of items
-    page: {
-        totalPages: number; // Total number of pages
-        totalElements: number; // Total number of elements
-        size: number; // Number of items in the current page
-        number: number; // Current page index
+    content: T[]
+    empty: boolean
+    first: boolean
+    last: boolean
+    number: number
+    numberOfElements: number
+    pageable: {
+        pageNumber: number,
+        pageSize: number,
+        offset: number,
+        paged: boolean
+        unpaged: boolean
     }
+    size: number
+    length: number
+    totalElements: number
+    totalPages: number
 }
 
 export type ApiResponse<T>  = {

@@ -3,7 +3,7 @@
         <p-toast />
 
         <!-- Empty state message -->
-        <div *ngIf="!selectedProduct" class="text-center w-full py-16">
+        <div *ngIf="!(!products || !products.content || products.content.length === 0) && !selectedProduct" class="text-center w-full py-16">
             <div class="flex flex-col items-center justify-center space-y-4">
                 <i class="pi pi-images text-5xl text-indigo-300"></i>
                 <h2 class="text-xl tablet:text-2xl font-bold text-gray-800">Manage Product Media</h2>
@@ -13,28 +13,6 @@
 
         <!-- Gallery and upload section -->
         <div *ngIf="selectedProduct && showGallery" class="my-8 flex flex-col items-center gap-8">
-            <!-- Selected product info banner -->
-<!--            <div class="w-full max-w-2xl bg-white rounded-lg shadow-md p-4 flex items-center">-->
-<!--                <img *ngIf="selectedProduct.media && selectedProduct.media.length > 0"-->
-<!--                     [src]="getMedia(selectedProduct.product.id, selectedProduct.media[0].imagePath)"-->
-<!--                     [alt]="selectedProduct.product.name"-->
-<!--                     class="w-16 h-16 object-cover rounded-md mr-4">-->
-<!--                <div *ngIf="!selectedProduct.media || selectedProduct.media.length === 0"-->
-<!--                     class="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center mr-4">-->
-<!--                    <i class="pi pi-image text-2xl text-gray-400"></i>-->
-<!--                </div>-->
-<!--                <div>-->
-<!--                    <h3 class="font-semibold text-gray-800">{{ selectedProduct.product?.name }}</h3>-->
-<!--                    <p class="text-sm text-gray-500">Manage media for this product</p>-->
-<!--                </div>-->
-<!--                <button-->
-<!--                        class="ml-auto text-indigo-600 hover:text-indigo-800 flex items-center gap-1">-->
-<!--                    <i class="pi pi-arrow-left text-sm"></i>-->
-<!--                    <span>Back to products</span>-->
-<!--                </button>-->
-<!--&lt;!&ndash;                        (click)="handleSelectProduct(null)"&ndash;&gt;-->
-<!--            </div>-->
-
             <!-- Upload image -->
             <div class="w-full max-w-2xl">
                 <div class="bg-white rounded-lg shadow-md overflow-hidden">
@@ -147,7 +125,7 @@
                         (onPageChange)="onPageChange($event)"
                         [first]="currentPage * pageSize"
                         [rows]="pageSize"
-                        [totalRecords]="products.page.totalElements"
+                        [totalRecords]="products.totalElements"
                         [rowsPerPageOptions]="[5, 10, 15, 20, 30]"
                         styleClass="p-paginator-custom"
                 >
@@ -165,130 +143,3 @@
         </div>
     </div>
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!--<div class="w-full p-5">-->
-<!--    <div>-->
-<!--        <p-toast />-->
-<!--        &lt;!&ndash; Empty state message &ndash;&gt;-->
-<!--        <div *ngIf="!selectedProduct" class="text-center text-gray-500 w-full py-8">-->
-<!--            <p class="text-sm tablet:text-lg">Please select a product to manage its media</p>-->
-<!--        </div>-->
-
-<!--        &lt;!&ndash; Gallery and upload section &ndash;&gt;-->
-<!--        <div *ngIf="selectedProduct && showGallery" class="my-2.5 tablet:my-5 desktop:my-10 flex flex-col items-center gap-6">-->
-<!--            &lt;!&ndash; Upload image &ndash;&gt;-->
-<!--            <div class="w-full max-w-lg desktop:max-w-xl">-->
-<!--                <app-upload-images-->
-<!--                        [productMedia]="selectedProduct"-->
-<!--                        [action]="ACTION.CREATE"-->
-<!--                        (event)="handleMediaAction($event)"-->
-<!--                        class="w-full p-4 bg-white rounded-lg shadow"-->
-<!--                />-->
-<!--            </div>-->
-
-<!--            <div class="w-full max-w-lg desktop:max-w-xl mx-auto">-->
-<!--                <p-carousel-->
-<!--                        [value]="selectedProduct.media"-->
-<!--                        [numVisible]="1"-->
-<!--                        [numScroll]="1"-->
-<!--                        [circular]="false"-->
-<!--                        [showNavigators]="false"-->
-<!--                        [responsiveOptions]="responsiveOptions"-->
-<!--                        class="shadow-lg rounded-lg overflow-hidden space-x-4"-->
-<!--                >-->
-<!--                    <ng-template let-media pTemplate="item">-->
-
-<!--                            &lt;!&ndash; Media Image &ndash;&gt;-->
-<!--                            <div class="relative w-full flex items-center justify-center rounded-md overflow-hidden">-->
-<!--                                <img [src]="getMedia(media.productId, media.imagePath)"-->
-<!--                                     [alt]="media.name"-->
-<!--                                     class="w-full object-contain"-->
-<!--                                />-->
-<!--                                <div class="flex justify-end gap-2 px-2 tablet:gap-6 tablet:px-4 tablet:py-2 rounded-sm absolute top-1 right-1 bg-white">-->
-<!--                                    <app-media-layout (isComplete)="handleMediaAction($event)" [media]="media" [action]="ACTION.UPDATE" />-->
-<!--                                    <app-media-layout (isComplete)="handleMediaAction($event)" [media]="media" [action]="ACTION.DELETE" />-->
-<!--                                </div>-->
-<!--                            </div>-->
-
-<!--                    </ng-template>-->
-<!--                </p-carousel>-->
-<!--            </div>-->
-<!--        </div>-->
-
-<!--        &lt;!&ndash; Product list &ndash;&gt;-->
-<!--        <div *ngIf="products && products?.content?.length">-->
-<!--            <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">-->
-<!--                <li *ngFor="let product of products.content; trackBy: trackByProductId">-->
-<!--                    <div-->
-<!--                            (click)="handleSelectProduct(product)"-->
-<!--                    class="flex  h-full items-stretch p-4 tablet:p-5 rounded-lg border cursor-pointer transition-all hover:shadow-lg"-->
-<!--                            [ngClass]="{-->
-<!--                            'bg-blue-50 border-blue-400': selectedProduct?.product?.id === product.product.id,-->
-<!--                            'bg-white border-gray-200': selectedProduct?.product?.id !== product.product.id-->
-<!--                        }"-->
-<!--                    >-->
-<!--                        &lt;!&ndash; Product Image &ndash;&gt;-->
-<!--                        <div>-->
-<!--                            <img *ngIf="product.media?.length"-->
-<!--                                 [src]="getMedia(product.product.id, product.media[0].imagePath)"-->
-<!--                                 [alt]="product.product.name"-->
-<!--                                 class="w-20 h-20 object-cover rounded-md">-->
-
-<!--                            <div *ngIf="!product.media?.length"-->
-<!--                                 class="w-20 h-20 object-cover rounded-md bg-gray-100 flex items-center justify-center">-->
-<!--                                <i class="pi pi-image text-3xl text-gray-400"></i>-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                        &lt;!&ndash; Product Info &ndash;&gt;-->
-<!--                        <div class="ml-4 flex-1">-->
-<!--                            <h3 class="text-lg font-semibold text-gray-800 capitalize">{{ product.product.name }}</h3>-->
-<!--                            <app-text-preview-->
-<!--                                    [text]="product.product.description"-->
-<!--                                    class="text-sm text-gray-600 mt-1"-->
-<!--                            ></app-text-preview>-->
-<!--                            <p class="text-lg font-bold text-blue-600 mt-2">${{ product.product.price }}</p>-->
-<!--                            &lt;!&ndash; Stock status &ndash;&gt;-->
-<!--                            <div class="mt-2">-->
-<!--                                <span-->
-<!--                                        *ngIf="product.product.quantity > 0"-->
-<!--                                        class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded"-->
-<!--                                >-->
-<!--                                    {{ product.product.quantity }} In stock-->
-<!--                                </span>-->
-<!--                                <span-->
-<!--                                        *ngIf="product.product.quantity === 0"-->
-<!--                                        class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded"-->
-<!--                                >-->
-<!--                                    Out of stock-->
-<!--                                </span>-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </li>-->
-<!--            </ul>-->
-<!--            &lt;!&ndash; Pagination &ndash;&gt;-->
-<!--            <p-paginator-->
-<!--                    (onPageChange)="onPageChange($event)"-->
-<!--                    [first]="currentPage * pageSize"-->
-<!--                    [rows]="pageSize"-->
-<!--                    [totalRecords]="products.page.totalElements"-->
-<!--                    [rowsPerPageOptions]="[5, 10, 15, 20, 30]">-->
-<!--            </p-paginator>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--</div>-->

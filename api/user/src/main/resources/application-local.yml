@@ -19,7 +19,7 @@ spring:
 application:
   security:
     jwt:
-      key-id: users-service-key
+      key-id: user-service-key
       issuer: http://user
 #      expiration: 3600
 #      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970

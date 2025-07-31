@@ -1,6 +1,5 @@
 package com.zone01.media.media;
 
-import com.zone01.media.dto.ProductsDTO;
 import com.zone01.media.model.Response;
 import com.zone01.media.service.FileServices;
 import com.zone01.media.config.kafka.ProductServices;

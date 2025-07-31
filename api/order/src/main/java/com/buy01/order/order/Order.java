@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -46,7 +47,9 @@ public class Order {
     private Double totalAmount; // 💵 Le montant total à payer (subtotal + shipping + tax)
     private double subtotal;   // 🧾 Le total des articles (hors frais et taxes)
 
+    @Transient
     public final double shipping = 100;   // 🚚 Les frais de livraison
+    @Transient
     public final double tax = 10;        // 🏛️ Les taxes (TVA, etc.)
 
     private String email;
@@ -54,6 +57,7 @@ public class Order {
 
     @Field("currency")
     @Builder.Default
+    @Transient
     public final String currency = "usd";
 
     @Field("user_id")

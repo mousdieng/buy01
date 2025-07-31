@@ -15,7 +15,7 @@ import {
   ApiResponse,
   CheckoutFormData, AvailableProductRequest
 } from '../../types';
-import { environment } from '../../environment';
+import { environment } from "../../../environments/environment";
 import { TokenService } from '../token/token.service';
 import { CartService } from '../cart/cart.service';
 import { OrderService } from '../order/order.service';

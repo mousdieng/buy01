@@ -5,7 +5,7 @@ import com.zone01.users.user.User;
 import com.zone01.users.model.Response;
 import com.zone01.users.config.jwt.JwtService;
 import com.zone01.users.model.JwtValidationResponse;
-import com.zone01.users.dto.UserDTO;
+import com.zone01.users.model.dto.UserDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -126,110 +126,3 @@ public class AuthenticationKafkaListener {
         createRequestHandler("auth-response-order").accept(record);
     }
 }
-
-
-
-//@Component
-//@RequiredArgsConstructor
-//@Slf4j
-//public class AuthenticationKafkaListener {
-//
-//    private final KafkaTemplate<String, Object> kafkaTemplate;
-//    private final ObjectMapper jacksonObjectMapper;
-//    private final JwtService jwtService;
-//
-//    private static final String AUTH_RESPONSE_SUBSCRIPTIONS = "auth-response-subscriptions";
-//    private static final String AUTH_RESPONSE_ANNOUNCEMENT = "auth-response-announcement";
-//    private static final String AUTH_RESPONSE_MEMBERS = "auth-response-members";
-//    private static final String AUTH_RESPONSE_PAYMENTS = "auth-response-payments";
-//
-//    private static final String AUTH_REQUEST_SUBSCRIPTIONS = "auth-request-subscriptions";
-//    private static final String AUTH_REQUEST_ANNOUNCEMENT = "auth-request-announcement";
-//    private static final String AUTH_REQUEST_MEMBERS = "auth-request-members";
-//    private static final String AUTH_REQUEST_PAYMENTS = "auth-request-payments";
-//
-//    private static final String AUTH_GROUP_SUBSCRIPTIONS = "auth-group-subscriptions";
-//    private static final String AUTH_GROUP_ANNOUNCEMENT = "auth-group-announcement";
-//    private static final String AUTH_GROUP_MEMBERS = "auth-group-members";
-//    private static final String AUTH_GROUP_PAYMENTS = "auth-group-payments";
-//
-//    @KafkaListener(topics = AUTH_REQUEST_SUBSCRIPTIONS, groupId = AUTH_GROUP_SUBSCRIPTIONS)
-//    public void handleAuthRequestSubscriptions(ConsumerRecord<String, Object> record) {
-//        this.handleAuthRequest(record, AUTH_RESPONSE_SUBSCRIPTIONS);
-//    }
-//
-//    @KafkaListener(topics =AUTH_REQUEST_MEMBERS, groupId = AUTH_GROUP_MEMBERS)
-//    public void handleAuthRequestMembers(ConsumerRecord<String, Object> record) {
-//        this.handleAuthRequest(record, AUTH_RESPONSE_MEMBERS);
-//    }
-//
-//    @KafkaListener(topics = AUTH_REQUEST_PAYMENTS, groupId = AUTH_GROUP_PAYMENTS)
-//    public void handleAuthRequestPayment(ConsumerRecord<String, Object> record) {
-//        this.handleAuthRequest(record, AUTH_RESPONSE_PAYMENTS);
-//    }
-//
-//    @KafkaListener(topics = AUTH_REQUEST_ANNOUNCEMENT, groupId = AUTH_GROUP_ANNOUNCEMENT)
-//    public void handleAuthRequestMedia(ConsumerRecord<String, Object> record) {
-//        this.handleAuthRequest(record, AUTH_RESPONSE_ANNOUNCEMENT);
-//    }
-//
-//    private void handleAuthRequest(ConsumerRecord<String, Object> record, String topicResponse) {
-//        log.info("Received authentication request from topic: {}, key: {}", record.topic(), record.key());
-//        String authHeader = jacksonObjectMapper.convertValue(record.value(), String.class);
-//        String authorizationHeader = authHeader == null ? null : authHeader.startsWith("\"") && authHeader.endsWith("\"") ?
-//                authHeader.substring(1, authHeader.length() - 1).trim() :
-//                authHeader.trim();
-//
-//        var header = record.headers().lastHeader(KafkaHeaders.CORRELATION_ID);
-//        byte[] correlationId = header != null ? header.value() : null;
-//
-//        try {
-//
-//            JwtValidationResponse jwtValidationResponse = jwtService.validateJwt(authorizationHeader);
-//            if (jwtValidationResponse.hasError()) {
-//                sendResponse(jwtValidationResponse.response(), correlationId, topicResponse);
-//                return;
-//            }
-//
-//            UserDTO userDTO = null;
-//            if (jwtValidationResponse.userDetails() instanceof User user) {
-//                userDTO = UserDTO.builder()
-//                        .id(user.getId())
-//                        .name(user.getName())
-//                        .email(user.getEmail())
-//                        .role(user.getRole())
-//                        .avatar(user.getAvatar())
-////                        .customer(user.getCustomer())
-////                        .paymentMethod(user.getPaymentMethod())
-//                        .build();
-//            }
-//
-//            // Return successful response
-//            sendResponse(buildResponse("Authentication successful", HttpStatus.OK, userDTO), correlationId, topicResponse);
-//
-//        } catch (Exception e) {
-//            log.error("Error processing authentication request", e);
-//            sendResponse(buildResponse("Error processing authentication request", HttpStatus.UNAUTHORIZED, null),
-//                    correlationId, topicResponse);
-//        }
-//    }
-//
-//    private void sendResponse(Response<Object> response, byte[] correlationId, String topicResponse) {
-//        Message<Response<Object>> message = MessageBuilder
-//                .withPayload(response)
-//                .setHeader(KafkaHeaders.TOPIC, topicResponse)
-//                .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
-//                .build();
-//
-//        kafkaTemplate.send(message);
-//    }
-//
-//    private Response<Object> buildResponse(String message, HttpStatus status, Object data) {
-//        return Response.<Object>builder()
-//                .status(status.value())
-//                .message(message)
-//                .data(data)
-//                .build();
-//    }
-//
-//}

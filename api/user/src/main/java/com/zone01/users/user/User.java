@@ -1,6 +1,6 @@
 package com.zone01.users.user;
 
-import com.zone01.users.dto.UserDTO;
+import com.zone01.users.model.dto.UserDTO;
 import com.zone01.users.model.Role;
 import lombok.Builder;
 import lombok.Data;

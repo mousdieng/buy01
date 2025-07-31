@@ -1,23 +1,23 @@
 import { Injectable } from '@angular/core';
-import { environment } from "../../environment";
+import { environment } from "../../../environments/environment";
 import { HttpClient, HttpHeaders, HttpParams } from "@angular/common/http";
 import { TokenService } from "../token/token.service";
 import {forkJoin, Observable, of, switchMap, throwError} from "rxjs";
 import {
     ApiResponse,
-    CheckoutRequest,
     CheckoutResponse,
     Order,
     OrderConfirmationRequest,
     OrderStatus,
     PaymentStatus,
     PaginatedResponse,
-    UserStatisticsDTO, SellerStatisticsDTO, Product, ProductMedia, User
+    UserStatisticsDTO, SellerStatisticsDTO
 } from "../../types";
-import { catchError, map, tap, retry } from "rxjs/operators";
+import { catchError, map, retry } from "rxjs/operators";
 import {ProductService} from "../product/product.service";
 import {MediaService} from "../media/media.service";
 import {UserService} from "../user/user.service";
+import {defaultPaginatedResponse} from "../../utils";
 
 export interface OrderSearchParams {
     userId?: string;
@@ -62,27 +62,6 @@ export interface OrderTrackingInfo {
         timestamp: Date;
         description: string;
     }>;
-}
-
-export interface OrderAnalytics {
-    period: 'week' | 'month' | 'year';
-    totalOrders: number;
-    totalRevenue: number;
-    averageOrderValue: number;
-    orderTrends: Array<{
-        date: string;
-        orders: number;
-        revenue: number;
-    }>;
-    topProducts: Array<{
-        productId: string;
-        productName: string;
-        quantity: number;
-        revenue: number;
-    }>;
-    statusBreakdown: {
-        [key in OrderStatus]: number;
-    };
 }
 
 @Injectable({
@@ -151,10 +130,7 @@ export class OrderService {
             { headers: this.getAuthHeaders(), params }
         ).pipe(
             map(response => response.data),
-            catchError(this.handleError<PaginatedResponse<Order>>('getOrders', {
-                content: [],
-                page: { totalPages: 0, totalElements: 0, size: 0, number: 0 }
-            }))
+            catchError(this.handleError<PaginatedResponse<Order>>('getOrders', defaultPaginatedResponse<Order>()))
         );
     }
 
@@ -172,18 +148,7 @@ export class OrderService {
         ).pipe(
             switchMap(orderResponse => {
                 const orders: Order[] = orderResponse.data.content;
-                if (orders.length === 0) {
-                    return of({
-                        status: orderResponse.status,
-                        message: orderResponse.message,
-                        data: {
-                            content: [],
-                            page: orderResponse.data.page
-                        }
-                    });
-                }
 
-                // For each order, enrich it with fullOrderItem[]
                 const enrichedOrders$ = orders.map(order => {
                     const fullOrderItems$ = order.orderItems.map(item =>
                         forkJoin({
@@ -213,8 +178,8 @@ export class OrderService {
                         status: orderResponse.status,
                         message: orderResponse.message,
                         data: {
+                            ...orderResponse.data,
                             content: enrichedOrders,
-                            page: orderResponse.data.page
                         }
                     }))
                 );
@@ -281,16 +246,6 @@ export class OrderService {
         ).pipe(
             switchMap(orderResponse => {
                 const orders: Order[] = orderResponse.data.content;
-                if (orders.length === 0) {
-                    return of({
-                        status: orderResponse.status,
-                        message: orderResponse.message,
-                        data: {
-                            content: [],
-                            page: orderResponse.data.page
-                        }
-                    });
-                }
 
                 // For each order, enrich it with fullOrderItem[]
                 const enrichedOrders$ = orders.map(order => {
@@ -322,8 +277,8 @@ export class OrderService {
                         status: orderResponse.status,
                         message: orderResponse.message,
                         data: {
+                            ...orderResponse.data,
                             content: enrichedOrders,
-                            page: orderResponse.data.page
                         }
                     }))
                 );
@@ -344,10 +299,7 @@ export class OrderService {
             { headers: this.getAuthHeaders(), params }
         ).pipe(
             map(response => response.data),
-            catchError(this.handleError<PaginatedResponse<Order>>('getSellerOrders', {
-                content: [],
-                page: { totalPages: 0, totalElements: 0, size: 0, number: 0 }
-            }))
+            catchError(this.handleError<PaginatedResponse<Order>>('getSellerOrders', defaultPaginatedResponse<Order>()))
         );
     }
 
@@ -563,10 +515,7 @@ export class OrderService {
             { headers: this.getAuthHeaders(), params }
         ).pipe(
             map(response => response.data),
-            catchError(this.handleError<PaginatedResponse<Order>>('getSellerOrdersByStatus', {
-                content: [],
-                page: { totalPages: 0, totalElements: 0, size: 0, number: 0 }
-            }))
+            catchError(this.handleError<PaginatedResponse<Order>>('getSellerOrdersByStatus', defaultPaginatedResponse<Order>()))
         );
     }
 

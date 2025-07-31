@@ -1,0 +1,39 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+  application:
+    name: media
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 10MB
+
+  kafka:
+    bootstrap-servers: 172.20.0.1:9092
+
+  data:
+    mongodb:
+      authentication-database: admin
+      uri: mongodb://user:password@172.20.0.1:27017/buy01?authSource=admin
+      auto-index-creation: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://172.20.0.1:8761/eureka/
+
+media:
+  upload:
+    base:
+      dir: '/app/uploads'
+    max:
+      file:
+        size: 2097152
+        count: 5
+  allowed:
+    content:
+      types: image/jpeg,image/png,image/webp
+
+server:
+  port: 9003

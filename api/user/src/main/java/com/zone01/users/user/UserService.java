@@ -1,8 +1,11 @@
 package com.zone01.users.user;
 
 import com.zone01.users.config.jwt.JwtService;
-import com.zone01.users.dto.*;
 import com.zone01.users.model.*;
+import com.zone01.users.model.dto.UpdateUserDTO;
+import com.zone01.users.model.dto.UserDTO;
+import com.zone01.users.model.dto.UserLoginDTO;
+import com.zone01.users.model.dto.UserRegistrationDTO;
 import com.zone01.users.model.exception.UserNotFoundException;
 import com.zone01.users.service.HelperUserService;
 import com.zone01.users.service.FileServices;
@@ -92,7 +95,8 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User is not found"));
 
-        helperUserService.updateEntity(user, dto);
+        var isChange = helperUserService.updateEntity(user, dto);
+        if (!isChange) return Response.badRequest("You have to provide at least one field to update.");
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         if (!violations.isEmpty()) {
             List<String> errors = violations.stream()
@@ -116,9 +120,10 @@ public class UserService {
     }
 
     public Response<UserDTO> deleteUser(String id) {
+        log.info("Deleting user with the id ({})", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User is not found"));
         userRepository.deleteById(id);
-        return Response.ok(userRepository.save(user).toUserDTO(), "User deleted successfully");
+        return Response.ok(user.toUserDTO(), "User deleted successfully");
     }
 }
