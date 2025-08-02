@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { HttpParamsProductsSearch, PaginatedResponse, ProductMedia } from "../../../types";
+import { HttpParamsProductsSearch, PaginatedResponse, ProductWithMedia } from "../../../types";
 import { Router } from "@angular/router";
 import { ProductService } from "../../../services/product/product.service";
 import { MediaService } from "../../../services/media/media.service";
@@ -54,7 +54,7 @@ interface FilterState {
     styleUrl: './product-list.component.css'
 })
 export class ProductListComponent implements OnInit, OnDestroy {
-    products: PaginatedResponse<ProductMedia> = defaultPaginatedResponse<ProductMedia>();
+    products: PaginatedResponse<ProductWithMedia> = defaultPaginatedResponse<ProductWithMedia>();
     currentPage: number = 0;
     pageSize: number = 12;
     isLoading: boolean = false;
@@ -210,7 +210,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
                         summary: 'Fetch Product Failed',
                         detail: err?.error?.message || "Failed to load products"
                     })
-                    this.products = defaultPaginatedResponse<ProductMedia>();
+                    this.products = defaultPaginatedResponse<ProductWithMedia>();
                 }
             });
     }
@@ -300,7 +300,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
         return this.mediaService.getMedia(productId, imagePath);
     }
 
-    trackByProductId(index: number, item: ProductMedia): string {
+    trackByProductId(index: number, item: ProductWithMedia): string {
         return item.product.id;
     }
 

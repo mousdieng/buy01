@@ -26,7 +26,8 @@ public class HelperUserService {
     }
 
     public boolean updateEntity(User entity, UpdateUserDTO dto) {
-        var isChanged = false;
+        boolean isChanged = false;
+
         var name = dto.getName() == null ? "" : dto.getName().trim();
         String escapedName = StringEscapeUtils.escapeHtml4(name.toLowerCase()).replace("'", "&#39;");
         if (!escapedName.isEmpty()) {
@@ -42,14 +43,22 @@ public class HelperUserService {
                 throw new BadCredentialsException("The password you provided doesn't match with the actual one.");
             }
         }
+
+        try {
+            boolean avatarChanged = updateProcessAvatar(entity, dto);
+            if (avatarChanged) isChanged = true;
+        } catch (IOException e) {
+            throw new RuntimeException("Avatar update failed: " + e.getMessage());
+        }
+
         return isChanged;
     }
 
-    public void updateProcessAvatar(User entity, UpdateUserDTO dto) throws IOException {
+    public boolean updateProcessAvatar(User entity, UpdateUserDTO dto) throws IOException {
 
         try {
             Optional<String> avatarOptional = this.processAvatar(dto.getAvatar());
-            if (avatarOptional.isEmpty()) return;
+            if (avatarOptional.isEmpty()) return false;
             String avatar = avatarOptional.get();
 
             if (entity.getAvatar() != null)
@@ -59,6 +68,7 @@ public class HelperUserService {
         } catch (Exception e) {
             throw new IOException(e.getMessage());
         }
+        return true;
     }
 
 }

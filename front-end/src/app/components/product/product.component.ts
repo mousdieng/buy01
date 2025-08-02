@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
-import {Cart, ProductMedia, UserPayload} from "../../types";
+import {Cart, ProductWithMedia, UserPayload} from "../../types";
 import {CartService} from "../../services/cart/cart.service";
 import {CardModule} from "primeng/card";
 import {MediaService} from "../../services/media/media.service";
@@ -31,7 +31,7 @@ import {AuthService} from "../../services/auth/auth.service";
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductComponent implements OnInit, OnDestroy {
-    @Input({required: true}) product!: ProductMedia;
+    @Input({required: true}) product!: ProductWithMedia;
     @Input() showQuickActions: boolean = true;
     @Input() imageHeight: string = 'h-72';
     @Input() enableHover: boolean = true;

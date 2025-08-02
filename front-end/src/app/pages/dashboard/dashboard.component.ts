@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import { AvatarModule } from 'primeng/avatar';
 import { CommonModule } from '@angular/common';
-import {ACTION, PaginatedResponse, ProductMedia, ToastMessage, UserPayload} from '../../types';
+import {ACTION, PaginatedResponse, ProductWithMedia, ToastMessage, UserPayload} from '../../types';
 import {TableModule} from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 
@@ -46,7 +46,7 @@ export class DashboardComponent implements OnInit {
     user$: Observable<UserPayload>;
     user: UserPayload | null = null;
 
-    products: PaginatedResponse<ProductMedia> = defaultPaginatedResponse<ProductMedia>();
+    products: PaginatedResponse<ProductWithMedia> = defaultPaginatedResponse<ProductWithMedia>();
     currentPage: number = 0;
     pageSize: number = 10;
     loading: boolean = false
@@ -82,7 +82,7 @@ export class DashboardComponent implements OnInit {
                     this.products = response.data;
                 },
                 error: (err) => {
-                    this.products = defaultPaginatedResponse<ProductMedia>();
+                    this.products = defaultPaginatedResponse<ProductWithMedia>();
                     this.messageService.add({
                         severity: "error",
                         summary: 'Error Fetching Product',

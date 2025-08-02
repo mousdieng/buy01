@@ -4,9 +4,8 @@ import {
     ApiResponse, AvailableProductRequest,
     CreateProduct,
     HttpParamsProductsSearch,
-    PaginatedResponse,
-    Product,
-    ProductMedia
+    PaginatedResponse, Product, ProductBase,
+    ProductWithMedia
 } from "../../types";
 import {forkJoin, Observable, of, switchMap} from "rxjs";
 import {TokenService} from "../token/token.service";
@@ -41,6 +40,13 @@ export class ProductService {
     );
   }
 
+  getProductByIdEvenDeletedOrNoneActive(id: string): Observable<ApiResponse<Product>> {
+      return this.http.get<ApiResponse<Product>>(
+          `${this.baseUrl}/${id}/all`,
+          { headers: { 'Content-Type': 'application/json' }}
+      );
+  }
+
   getProductsByUserId(userId: string, page: number = 0, size: number = 10): Observable<ApiResponse<PaginatedResponse<Product>>> {
     return this.http.get<ApiResponse<PaginatedResponse<Product>>>(
         `${this.baseUrl}/users/${userId}?page=${page}&size=${size}`,
@@ -48,7 +54,7 @@ export class ProductService {
     );
   }
 
-  getSingleProductsMedia(productId: string): Observable<ApiResponse<ProductMedia>> {
+  getSingleProductsMedia(productId: string): Observable<ApiResponse<ProductWithMedia>> {
         return this.getProductById(productId).pipe(
             switchMap(productsResponse => {
                 const product: Product = productsResponse.data;
@@ -72,7 +78,7 @@ export class ProductService {
         );
     }
 
-  searchProducts(params: HttpParamsProductsSearch): Observable<ApiResponse<PaginatedResponse<ProductMedia>>> {
+  searchProducts(params: HttpParamsProductsSearch): Observable<ApiResponse<PaginatedResponse<ProductWithMedia>>> {
       let httpParams = new HttpParams();
 
       if (params.keyword) httpParams = httpParams.set('keyword', params.keyword);
@@ -115,7 +121,7 @@ export class ProductService {
                 );
 
                 return forkJoin(mediaRequests).pipe(
-                    map((fullProductsArray: ProductMedia[]) => ({
+                    map((fullProductsArray: ProductWithMedia[]) => ({
                         status: productsResponse.status,
                         message: productsResponse.message,
                         data: {
@@ -128,7 +134,7 @@ export class ProductService {
       );
     }
 
-  getProductsWithMediaByUserId(userId: string, page: number = 0, size: number = 10): Observable<ApiResponse<PaginatedResponse<ProductMedia>>> {
+  getProductsWithMediaByUserId(userId: string, page: number = 0, size: number = 10): Observable<ApiResponse<PaginatedResponse<ProductWithMedia>>> {
     return this.getProductsByUserId(userId, page, size).pipe(
         switchMap(productsResponse => {
           const products = productsResponse.data.content;
@@ -159,7 +165,7 @@ export class ProductService {
     return this.http.post<ApiResponse<Product>>(`${this.baseUrl}/`, product, { headers: this.getAuthHeaders() });
   }
 
-  updateProduct(id: string, updates: Product): Observable<ApiResponse<Product>> {
+  updateProduct(id: string, updates: ProductBase): Observable<ApiResponse<Product>> {
     return this.http.put<ApiResponse<Product>>(`${this.baseUrl}/${id}`, updates, { headers: this.getAuthHeaders() });
   }
 

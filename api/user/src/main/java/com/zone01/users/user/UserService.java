@@ -1,5 +1,6 @@
 package com.zone01.users.user;
 
+import com.zone01.users.config.jwt.JwtAuthenticationFilter;
 import com.zone01.users.config.jwt.JwtService;
 import com.zone01.users.model.*;
 import com.zone01.users.model.dto.UpdateUserDTO;
@@ -9,15 +10,18 @@ import com.zone01.users.model.dto.UserRegistrationDTO;
 import com.zone01.users.model.exception.UserNotFoundException;
 import com.zone01.users.service.HelperUserService;
 import com.zone01.users.service.FileServices;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,6 +40,13 @@ public class UserService {
     private final JwtService jwtService;
 
     public Response<UserDTO> getUserById(String id) {
+        log.info("Getting user with the id ({})", id);
+        return userRepository.findByIdAndDeletedFalse(id)
+                .map(u -> Response.ok(u.toUserDTO(), "success"))
+                .orElseGet(() -> Response.notFound("User not found."));
+    }
+
+    public Response<UserDTO> getUserByIdEvenDeleted(String id) {
         log.info("Getting user with the id ({})", id);
         return userRepository.findById(id)
                 .map(u -> Response.ok(u.toUserDTO(), "success"))
@@ -69,11 +80,17 @@ public class UserService {
     }
 
     public Response<Object> getUserAvatar(String filename) {
+        Optional<User> user = userRepository.findUserByAvatarAndDeletedFalse(filename);
+        if (user.isEmpty()) return Response.notFound("User avatar not found.");
+        return fileServices.getAvatar(filename);
+    }
+
+    public Response<Object> getUserAvatarEvenDeleted(String filename) {
         return fileServices.getAvatar(filename);
     }
 
     public Response<AuthenticationResponse> authenticate(UserLoginDTO loginRequest) {
-        User user = userRepository.findUserByEmail(loginRequest.getEmail())
+        User user = userRepository.findUserByEmailAndDeletedFalse(loginRequest.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("Email is not found"));
 
         authenticationManager.authenticate(
@@ -91,9 +108,20 @@ public class UserService {
                 "user has been authenticated successfully.");
     }
 
+    public Response<Object> authorization(String userId) {
+        User currentUser = JwtAuthenticationFilter.getCurrentUser();
+        return Response.when(
+                !currentUser.getId().equals(userId),
+                () -> Response.forbidden("You are not authorized to perform this action.")
+        );
+    }
+
     public Response<AuthenticationResponse> updateUser(String userId, UpdateUserDTO dto) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndDeletedFalse(userId)
                 .orElseThrow(() -> new UserNotFoundException("User is not found"));
+
+        Response<Object> response = this.authorization(user.getId());
+        if (response != null) return Response.mapper(response);
 
         var isChange = helperUserService.updateEntity(user, dto);
         if (!isChange) return Response.badRequest("You have to provide at least one field to update.");
@@ -106,7 +134,6 @@ public class UserService {
         }
 
         try {
-            helperUserService.updateProcessAvatar(user, dto);
             userRepository.save(user);
             return Response.ok(
                     AuthenticationResponse.builder()
@@ -121,9 +148,15 @@ public class UserService {
 
     public Response<UserDTO> deleteUser(String id) {
         log.info("Deleting user with the id ({})", id);
-        User user = userRepository.findById(id)
+        User user = userRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new UserNotFoundException("User is not found"));
-        userRepository.deleteById(id);
-        return Response.ok(user.toUserDTO(), "User deleted successfully");
+
+        Response<Object> response = this.authorization(user.getId());
+        if (response != null) return Response.mapper(response);
+
+        user.setDeleted(true);
+        user.setDeletedAt(new Date());
+        User deletedUser = userRepository.save(user);
+        return Response.ok(deletedUser.toUserDTO(), "User deleted successfully");
     }
 }

@@ -1,8 +1,8 @@
-import {ProductMedia} from "./product";
+import {ProductWithMedia} from "./product";
 
 export interface CartItem {
     id: string;
-    item: ProductMedia;
+    item: ProductWithMedia;
     quantity: number;
     price: number;
     addedAt: Date;

@@ -1,6 +1,6 @@
 import {Component, computed, OnDestroy, OnInit, Signal, signal} from '@angular/core';
 import {ActivatedRoute, Router, RouterLink, RouterLinkActive} from "@angular/router";
-import { ProductMedia, UserPayload} from "../../../types";
+import { ProductWithMedia, UserPayload} from "../../../types";
 import {ProductService} from "../../../services/product/product.service";
 import {MessageService, PrimeTemplate} from "primeng/api";
 import {CarouselModule} from "primeng/carousel";
@@ -40,7 +40,7 @@ type StockSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'con
     styleUrl: './product-detail.component.css',
 })
 export class ProductDetailComponent implements OnInit, OnDestroy {
-    product: ProductMedia | null = null;
+    product: ProductWithMedia | null = null;
     responsiveOptions: any[] | undefined;
 
     private destroy$ = new Subject<void>();

@@ -1,4 +1,4 @@
-package com.zone01.product.dto;
+package com.zone01.product.model.dto;
 
 import com.zone01.product.product.Products;
 import jakarta.validation.constraints.*;
@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.text.StringEscapeUtils;
+
+import java.util.Date;
 
 @Data
 @AllArgsConstructor

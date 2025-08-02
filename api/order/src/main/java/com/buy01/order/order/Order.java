@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -70,12 +71,14 @@ public class Order {
     @Field("cancel_reason")
     private String cancelReason;
 
+    private boolean deleted = false;
 
     @Builder.Default
     private Date createdAt = new Date();
     private Date updatedAt;
     private Date cancelledAt;
     private Date completedAt;
+    private Date deletedAt;
 
     private List<OrderStatusHistory> statusHistory;
     private ShippingAddressDTO shippingAddress;
@@ -113,5 +116,39 @@ public class Order {
     }
 
 
+    public OrderDTO toDTO() {
+        return OrderDTO.builder()
+                .id(id)
+                .status(status)
+                .paymentStatus(paymentStatus)
+                .stripePaymentIntentId(stripePaymentIntentId)
+                .stripeClientSecret(stripeClientSecret)
+                .totalAmount(totalAmount)
+                .subtotal(subtotal)
+                .shipping(shipping)
+                .tax(tax)
+                .email(email)
+                .phone(phone)
+                .currency(currency)
+                .userId(userId)
+                .stripeRefundId(stripeRefundId)
+                .cancelReason(cancelReason)
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
+                .cancelledAt(cancelledAt)
+                .completedAt(completedAt)
+                .statusHistory(statusHistory)
+                .shippingAddress(shippingAddress)
+                .billingAddress(billingAddress)
+                .orderItems(orderItems)
+                .build();
+    }
 
+    public static Page<OrderDTO> toDTO(Page<Order> order) {
+        return order.map(Order::toDTO);
+    }
+
+    public static List<OrderDTO> toDTO(List<Order> order) {
+        return order.stream().map(Order::toDTO).collect(Collectors.toList());
+    }
 }

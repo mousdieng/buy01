@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import {ProductMedia, ToastMessage} from "../../types";
+import {ProductWithMedia, ToastMessage} from "../../types";
 import { ProductService } from "../../services/product/product.service";
 import { NgIf } from "@angular/common";
 import { catchError, finalize } from "rxjs/operators";
@@ -12,7 +12,7 @@ import { of } from "rxjs";
     templateUrl: './delete-product.component.html'
 })
 export class DeleteProductComponent {
-  @Input() productMedia!: ProductMedia;
+  @Input() productMedia!: ProductWithMedia;
   @Output() productDeleted = new EventEmitter<ToastMessage>();
 
   isVisible: boolean = false;

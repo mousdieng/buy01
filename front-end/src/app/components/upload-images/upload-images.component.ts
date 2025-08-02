@@ -5,7 +5,7 @@ import {FileSelectEvent, FileUploadEvent, FileUploadModule} from 'primeng/fileup
 import {MediaService} from "../../services/media/media.service";
 import {catchError, finalize} from 'rxjs/operators';
 import {of} from 'rxjs';
-import {ACTION, Media, ProductMedia, ToastMessage} from "../../types";
+import {ACTION, Media, ProductWithMedia, ToastMessage} from "../../types";
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_MB = 2;
@@ -32,7 +32,7 @@ interface ValidationResult {
 })
 export class UploadImagesComponent implements OnInit {
     @Input({required: true}) action: ACTION = ACTION.CREATE;
-    @Input() productMedia!: ProductMedia;
+    @Input() productMedia!: ProductWithMedia;
     @Input() mediaToUpdate: Media | null = null;
     @Output() event = new EventEmitter<ToastMessage>()
     lastMessageError: ToastMessage | null = null;

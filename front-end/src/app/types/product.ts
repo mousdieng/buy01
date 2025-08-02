@@ -1,12 +1,18 @@
 import {Media, User} from "./index";
 
-export interface Product {
+export interface ProductBase {
     id: string;
     name: string;
     description: string;
     price: number;
     quantity: number;
     userID: string;
+}
+
+export interface Product extends ProductBase {
+    active: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface AvailableProductRequest {
@@ -37,12 +43,12 @@ export interface HttpParamsProductsSearch {
     size?: number;
 }
 
-export interface ProductMedia {
+export interface ProductWithMedia {
     product: Product;
     media: Media[]
 }
 
-export interface FullProduct {
+export interface ProductWithUserAndMedia {
     user: User,
     product: Product,
     media: Media[]

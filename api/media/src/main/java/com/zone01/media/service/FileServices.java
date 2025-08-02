@@ -155,7 +155,6 @@ public class FileServices {
 
     public Response<Object> getImages(String productId, String imagePath) {
         try {
-            // Sanitize productId and imagePath
             if (productId == null || imagePath == null || productId.isBlank() || imagePath.isBlank()) {
                 return buildErrorResponse("Invalid product ID or imagePath");
             }
@@ -170,11 +169,7 @@ public class FileServices {
                 return buildErrorResponse("File not found");
             }
 
-            return Response.<Object>builder()
-                    .message("Success")
-                    .status(HttpStatus.OK.value())
-                    .data(resource)
-                    .build();
+            return Response.ok(resource);
         } catch (Exception e) {
             return buildErrorResponse("Failed to retrieve file");
         }

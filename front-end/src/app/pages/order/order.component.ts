@@ -103,7 +103,8 @@ export class OrderComponent implements OnInit, OnDestroy {
   }
 
   getMedia(productId: string, imagePath: string): string | null {
-    return this.mediaService.getMedia(productId, imagePath)
+    let path: string | null = this.mediaService.getMedia(productId, imagePath)
+    return path == null ? null : `${path}/all`;
   }
 
   private loadOrder(): void {

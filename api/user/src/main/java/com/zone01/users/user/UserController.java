@@ -29,12 +29,29 @@ public class UserController {
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
+    @GetMapping("/{id}/all")
+    public ResponseEntity<Response<UserDTO>> getUserByIdEvenDeleted(@PathVariable String id) {
+        Response<UserDTO> response = userService.getUserByIdEvenDeleted(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
     @GetMapping("/avatar/{filename}")
     public ResponseEntity<Object> getUserAvatar(@PathVariable String filename) {
         Response<Object> response = userService.getUserAvatar(filename);
-        if (response.getStatus() != HttpStatus.OK.value()) {
-            return ResponseEntity.status(response.getStatus()).body(response);
-        }
+        if (response.isError()) return ResponseEntity.status(response.getStatus()).body(response);
+
+        Resource resource = (Resource) response.getData();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        headers.setContentDispositionFormData("inline", resource.getFilename());
+
+        return ResponseEntity.status(response.getStatus()).headers(headers).body(resource);
+    }
+
+    @GetMapping("/avatar/{filename}/all")
+    public ResponseEntity<Object> getUserAvatarEvenDeleted(@PathVariable String filename) {
+        Response<Object> response = userService.getUserAvatarEvenDeleted(filename);
+        if (response.isError()) return ResponseEntity.status(response.getStatus()).body(response);
 
         Resource resource = (Resource) response.getData();
         HttpHeaders headers = new HttpHeaders();

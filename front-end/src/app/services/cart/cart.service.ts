@@ -1,6 +1,6 @@
 import {Inject, Injectable, PLATFORM_ID, signal} from '@angular/core';
 import {BehaviorSubject, Observable, of, throwError} from 'rxjs';
-import {CartItem, Cart, ProductMedia, UserPayload} from "../../types";
+import {CartItem, Cart, ProductWithMedia, UserPayload} from "../../types";
 import {isPlatformBrowser} from "@angular/common";
 import {AuthService} from "../auth/auth.service";
 
@@ -186,7 +186,7 @@ export class CartService {
   }
 
   // Add item to cart
-  addToCart(product: ProductMedia, quantity: number = 1): Observable<Cart> {
+  addToCart(product: ProductWithMedia, quantity: number = 1): Observable<Cart> {
     if (!this.isAuthenticated()) {
       return this.throwUnauthenticatedError();
     }

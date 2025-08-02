@@ -30,7 +30,6 @@ public class AuthenticationKafkaListener {
     private final ObjectMapper objectMapper;
     private final JwtService jwtService;
 
-    // Function to extract and clean authorization header
     private String extractAuthHeader(Object value) {
         return  Optional.ofNullable(objectMapper.convertValue(value, String.class))
                 .map(header -> header.startsWith("\"") && header.endsWith("\"")
@@ -39,18 +38,14 @@ public class AuthenticationKafkaListener {
                 .orElse(null);
     }
 
-
-    // Function to extract correlation ID
     private final Function<ConsumerRecord<String, Object>, byte[]> extractCorrelationId = record ->
             Optional.ofNullable(record.headers().lastHeader(KafkaHeaders.CORRELATION_ID))
                     .map(header -> header.value())
                     .orElse(null);
 
-    // Supplier for error response
     private final Supplier<Response<UserDTO>> createErrorResponse = () ->
             Response.unauthorized("Error processing authentication request");
 
-    // Main authentication processor
     private Response<UserDTO> authProcessor(String authHeader) {
         try {
             log.info("====== Checking the authentication header from kafka ========");
@@ -73,7 +68,7 @@ public class AuthenticationKafkaListener {
             var s = createErrorResponse.get();
             return createErrorResponse.get();
         }
-    };
+    }
 
     // Response sender implementation
     private void responseSender(Response<Object> response, byte[] correlationId, String topic) {
@@ -84,7 +79,7 @@ public class AuthenticationKafkaListener {
                 .build();
 
         kafkaTemplate.send(message);
-    };
+    }
 
     // Generic request handler using functional approach
     private final Consumer<ConsumerRecord<String, Object>> createRequestHandler(String responseTopic) {

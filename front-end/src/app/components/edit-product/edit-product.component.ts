@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, Output, SimpleChanges} from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import {Product, ToastMessage} from "../../types";
+import {ProductBase, ToastMessage} from "../../types";
 import {ProductService} from "../../services/product/product.service";
 import {AlertService} from "../../services/alert/alert.service";
 import {AlertComponent} from "../alert/alert.component";
@@ -16,7 +16,7 @@ import {ToastModule} from "primeng/toast";
     templateUrl: './edit-product.component.html',
 })
 export class EditProductComponent {
-  @Input({required: true}) product!: Product;
+  @Input({required: true}) product!: ProductBase;
   @Output() productEdited = new EventEmitter<ToastMessage>();
 
   isEditProductVisible: boolean = false;
@@ -85,7 +85,7 @@ export class EditProductComponent {
       return;
     }
 
-    const updatedProduct: Product = {
+    const updatedProduct: ProductBase = {
       id: this.product.id,
       name: this.editProductForm.value.name,
       description: this.editProductForm.value.description,
@@ -127,7 +127,7 @@ export class EditProductComponent {
     });
   }
 
-  isValuesUnchanged(product: Product): boolean {
+  isValuesUnchanged(product: ProductBase): boolean {
     return product.name === this.originalValues.name &&
         product.description === this.originalValues.description &&
         Number(product.price) === Number(this.originalValues.price) &&

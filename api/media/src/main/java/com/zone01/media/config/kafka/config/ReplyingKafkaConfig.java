@@ -23,14 +23,23 @@ public class ReplyingKafkaConfig {
         return replyingTemplate;
     }
 
+//    @Bean
+//    public ReplyingKafkaTemplate<String, String, Response<?>> replyingProductKafkaTemplate(
+//            ProducerFactory<String, String> producerFactory,
+//            ConcurrentMessageListenerContainer<String, Response<?>> repliesProductContainer) {
+//        ReplyingKafkaTemplate<String, String, Response<?>> replyingTemplate =
+//                new ReplyingKafkaTemplate<>(producerFactory, repliesProductContainer);
+//        replyingTemplate.setDefaultReplyTimeout(Duration.ofSeconds(5));
+//        return replyingTemplate;
+//    }
+
     @Bean
-    public ReplyingKafkaTemplate<String, String, Response<?>> replyingProductKafkaTemplate(
-            ProducerFactory<String, String> producerFactory,
+    public ReplyingKafkaTemplate<String, Object, Response<?>> replyingProductKafkaTemplate(
+            ProducerFactory<String, Object> producerFactory,
             ConcurrentMessageListenerContainer<String, Response<?>> repliesProductContainer) {
-        ReplyingKafkaTemplate<String, String, Response<?>> replyingTemplate =
+        ReplyingKafkaTemplate<String, Object, Response<?>> replyingTemplate =
                 new ReplyingKafkaTemplate<>(producerFactory, repliesProductContainer);
-        replyingTemplate.setDefaultReplyTimeout(Duration.ofSeconds(5));
+        replyingTemplate.setDefaultReplyTimeout(Duration.ofSeconds(30));
         return replyingTemplate;
     }
-
 }

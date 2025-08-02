@@ -1,4 +1,4 @@
-package com.zone01.product.dto;
+package com.zone01.product.model.dto;
 
 import com.zone01.product.model.Role;
 import lombok.Builder;

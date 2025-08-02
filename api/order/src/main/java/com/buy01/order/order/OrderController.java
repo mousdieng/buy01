@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,19 +28,19 @@ public class OrderController {
     private final OrderStatisticsService orderStatisticsService;
 
     @PostMapping("/checkout/integrated")
-    public ResponseEntity<Response<Order>> integratedCheckout(
+    public ResponseEntity<Response<OrderDTO>> integratedCheckout(
             @Valid @RequestBody CheckoutRequestDTO requestDTO,
             HttpServletRequest request) throws StripeException {
-        Response<Order> response = checkoutService.createIncompleteOrder(requestDTO, request);
+        Response<OrderDTO> response = checkoutService.createIncompleteOrder(requestDTO, request);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PostMapping("/confirm")
-    public ResponseEntity<Response<Order>> confirmOrder(
+    public ResponseEntity<Response<OrderDTO>> confirmOrder(
             @RequestBody OrderConfirmationDTO confirmationDTO,
             HttpServletRequest request) throws StripeException {
 
-        Response<Order> response = checkoutService.confirmOrder(confirmationDTO, request);
+        Response<OrderDTO> response = checkoutService.confirmOrder(confirmationDTO, request);
         return ResponseEntity.ok(response);
     }
 
@@ -55,33 +54,24 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<Response<Order>> getOrder(@PathVariable String orderId, HttpServletRequest request) {
-        Response<Order> response = orderService.getOrderById(orderId, request);
+    public ResponseEntity<Response<OrderDTO>> getOrder(@PathVariable String orderId, HttpServletRequest request) {
+        Response<OrderDTO> response = orderService.getOrderById(orderId, request);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
-    @GetMapping("/user")
-    public ResponseEntity<Response<Page<Order>>> getUserOrders(
-            HttpServletRequest request,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Response<Page<Order>> response = orderService.getUserOrdersPaginated(request, page, size);
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping("/incomplete/user")
-    public ResponseEntity<Response<Page<Order>>> getIncompleteOrders(
+    public ResponseEntity<Response<Page<OrderDTO>>> getIncompleteOrders(
             HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Response<Page<Order>> response = orderService.getIncompleteOrdersByUserId(request, page, size);
+        Response<Page<OrderDTO>> response = orderService.getIncompleteOrdersByUserId(request, page, size);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{orderId}/cancel")
-    public ResponseEntity<Response<Order>> cancelOrder(
+    public ResponseEntity<Response<OrderDTO>> cancelOrder(
             @RequestBody CancelOrderRequestDTO dto, HttpServletRequest request) {
-        Response<Order> response = orderService.cancelOrder(dto, request);
+        Response<OrderDTO> response = orderService.cancelOrder(dto, request);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
@@ -89,10 +79,10 @@ public class OrderController {
      * Delete an order
      */
     @DeleteMapping("/{orderId}")
-    public ResponseEntity<Response<Order>> deleteOrder(
+    public ResponseEntity<Response<OrderDTO>> deleteOrder(
             @PathVariable String orderId,
             HttpServletRequest request) {
-        Response<Order> response = orderService.deleteOrder(orderId, request);
+        Response<OrderDTO> response = orderService.deleteOrder(orderId, request);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
@@ -100,7 +90,7 @@ public class OrderController {
      * Search orders with filters
      */
     @GetMapping("/search")
-    public ResponseEntity<Response<Page<Order>>> searchOrders(
+    public ResponseEntity<Response<Page<OrderDTO>>> searchOrders(
             HttpServletRequest request,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) OrderStatus status,
@@ -109,33 +99,9 @@ public class OrderController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Page<Order> response = orderService.searchOrdersPaginated(
+        Page<OrderDTO> response = orderService.searchOrdersPaginated(
                 request, keyword, status, paymentStatus, startDate, endDate, page, size);
         return ResponseEntity.ok(Response.ok(response));
-    }
-
-    /**
-     * Get orders for seller
-     */
-    @GetMapping("/seller")
-    public ResponseEntity<Response<Page<Order>>> getSellerOrders(
-            HttpServletRequest request,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Response<Page<Order>> response = orderService.getSellerOrdersPaginated(request, page, size);
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
-
-    /**
-     * Update order status (for sellers)
-     */
-    @PutMapping("/{orderId}/status")
-    public ResponseEntity<Response<Order>> updateOrderStatus(
-            @PathVariable String orderId,
-            @RequestParam String sellerId,
-            @RequestParam OrderStatus status) {
-        Response<Order> response = orderService.updateOrderStatus(orderId, sellerId, status);
-        return ResponseEntity.ok(response);
     }
 
     /**
@@ -156,33 +122,38 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-
-
-
-//    /**
-//     * Get user orders by status with pagination
-//     */
-//    @GetMapping("/user/{userId}/status/{status}")
-//    public ResponseEntity<Response<Page<Order>>> getUserOrdersByStatus(
-//            @PathVariable String userId,
-//            @PathVariable OrderStatus status,
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "10") int size) {
-//        Response<Page<Order>> response = orderService.getUserOrdersByStatusPaginated(userId, status, page, size);
-//        return ResponseEntity.ok(response);
-//    }
-//
-//    /**
-//     * Get seller orders by status with pagination
-//     */
-//    @GetMapping("/seller/{sellerId}/status/{status}")
-//    public ResponseEntity<Response<Page<Order>>> getSellerOrdersByStatus(
-//            @PathVariable String sellerId,
-//            @PathVariable OrderStatus status,
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "10") int size) {
-//        Response<Page<Order>> response = orderService.getSellerOrdersByStatusPaginated(sellerId, status, page, size);
-//        return ResponseEntity.ok(response);
-//    }
-
 }
+
+
+///**
+// * Get orders for seller
+// */
+//@GetMapping("/seller")
+//public ResponseEntity<Response<Page<Order>>> getSellerOrders(
+//        HttpServletRequest request,
+//        @RequestParam(defaultValue = "0") int page,
+//        @RequestParam(defaultValue = "10") int size) {
+//    Response<Page<Order>> response = orderService.getSellerOrdersPaginated(request, page, size);
+//    return ResponseEntity.status(response.getStatus()).body(response);
+//}
+//
+///**
+// * Update order status (for sellers)
+// */
+//@PutMapping("/{orderId}/status")
+//public ResponseEntity<Response<Order>> updateOrderStatus(
+//        @PathVariable String orderId,
+//        @RequestParam String sellerId,
+//        @RequestParam OrderStatus status) {
+//    Response<Order> response = orderService.updateOrderStatus(orderId, sellerId, status);
+//    return ResponseEntity.ok(response);
+//}
+//
+//@GetMapping("/user")
+//public ResponseEntity<Response<Page<Order>>> getUserOrders(
+//        HttpServletRequest request,
+//        @RequestParam(defaultValue = "0") int page,
+//        @RequestParam(defaultValue = "10") int size) {
+//    Response<Page<Order>> response = orderService.getUserOrdersPaginated(request, page, size);
+//    return ResponseEntity.ok(response);
+//}

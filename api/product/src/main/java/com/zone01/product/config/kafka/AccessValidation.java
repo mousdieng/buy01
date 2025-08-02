@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.zone01.product.dto.UserDTO;
+import com.zone01.product.model.dto.UserDTO;
 import com.zone01.product.model.Response;
 import com.zone01.product.model.Role;
 

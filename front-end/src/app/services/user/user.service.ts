@@ -39,8 +39,20 @@ export class UserService {
     );
   }
 
+  getUserByIdEvenDeleted(id: string): Observable<ApiResponse<User>> {
+      return this.http.get<ApiResponse<User>>(
+          `${this.API_URL}/${id}/all`,
+          { headers: this.getAuthHeaders() }
+      ).pipe(
+          catchError(error => {
+              console.error('Error fetching user:', error);
+              return throwError(() => new Error('Failed to fetch user. Please try again later.'));
+          })
+      );
+  }
+
   updateUser(userId: string, user: FormData): Observable<ApiResponse<Tokens> | null> {
-    return this.http
+      return this.http
         .put<ApiResponse<Tokens>>(`${this.API_URL}/${userId}`, user, {
           headers: this.getAuthHeaders(),
           reportProgress: true,
@@ -50,7 +62,6 @@ export class UserService {
             map(response => {
               const body = response.body;
               if (body?.data && HttpStatusCode.Ok === body.status) {
-                // Let the AuthService handle token storage and user state updates
                 this.authService.updateUserState(body.data);
               }
               return body;

@@ -12,6 +12,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Date;
 
 @Data
 @Builder
@@ -26,6 +27,9 @@ public class User implements UserDetails {
     @Field("role_user")
     private Role role;
     private String avatar;
+
+    private boolean deleted;
+    private Date deletedAt;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

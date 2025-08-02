@@ -42,6 +42,13 @@ export class MediaService {
     );
   }
 
+  getMediaByProductIdEvenDeleted(productId: string): Observable<ApiResponse<Media[]>> {
+    return this.http.get<ApiResponse<Media[]>>(
+        `${this.baseUrl}/product/${productId}/all`,
+        { headers: { 'Content-Type': 'application/json' }}
+    );
+  }
+
   // Create a new product
   createMedia(productId: string, formdata: FormData): Observable<ApiResponse<Media>> {
     return this.http.post<ApiResponse<Media>>(`${this.baseUrl}/${productId}`, formdata, { headers: {

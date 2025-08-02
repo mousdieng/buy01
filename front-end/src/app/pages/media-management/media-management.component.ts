@@ -1,5 +1,5 @@
 import { Component, OnInit} from '@angular/core';
-import {ACTION, PaginatedResponse, ProductMedia, ToastMessage, UserPayload} from '../../types';
+import {ACTION, PaginatedResponse, ProductWithMedia, ToastMessage, UserPayload} from '../../types';
 import {CommonModule} from '@angular/common';
 import { GalleriaModule } from 'primeng/galleria';
 import { FileUploadModule } from 'primeng/fileupload';
@@ -40,8 +40,8 @@ import {defaultPaginatedResponse} from "../../utils";
 })
 export class MediaManagementComponent implements OnInit {
     protected readonly ACTION = ACTION
-    products: PaginatedResponse<ProductMedia> = defaultPaginatedResponse<ProductMedia>();
-    selectedProduct: ProductMedia | null = null;
+    products: PaginatedResponse<ProductWithMedia> = defaultPaginatedResponse<ProductWithMedia>();
+    selectedProduct: ProductWithMedia | null = null;
     currentPage: number = 0;
     pageSize: number = 10;
 
@@ -124,11 +124,11 @@ export class MediaManagementComponent implements OnInit {
             });
     }
 
-    trackByProductId(index: number, productMedia: ProductMedia): string {
+    trackByProductId(index: number, productMedia: ProductWithMedia): string {
         return productMedia.product.id; // Use the product's unique identifier
     }
 
-    handleSelectProduct(product: ProductMedia) {
+    handleSelectProduct(product: ProductWithMedia) {
       this.selectedProduct = product;
       this.showGallery = false;
       setTimeout(() => {

@@ -180,7 +180,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 
     getMedia(id: string, media: Media[] | undefined): string {
         if (!media?.length) return ''
-        return `${environment.apiUrl}media/${id}/${media[0]?.imagePath}`;
+        return `${environment.apiUrl}media/${id}/${media[0]?.imagePath}/all`;
     }
 
     private createEditProfileForm(): FormGroup {

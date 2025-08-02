@@ -2,7 +2,7 @@ import {Component, EventEmitter, Input, Output, OnDestroy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {ButtonModule} from 'primeng/button';
 import {MenuModule} from 'primeng/menu';
-import {ACTION, Media, ProductMedia, ToastMessage} from "../../types";
+import {ACTION, Media, ProductWithMedia, ToastMessage} from "../../types";
 import {UploadImagesComponent} from "../upload-images/upload-images.component";
 import {MediaService} from "../../services/media/media.service";
 import {catchError, finalize} from "rxjs/operators";
@@ -20,7 +20,7 @@ import {ModalComponent} from "../modal/modal.component";
   styleUrls: ['./media-layout.component.css']
 })
 export class MediaLayoutComponent implements OnDestroy {
-  @Input() productMedia!: ProductMedia;
+  @Input() productMedia!: ProductWithMedia;
   @Input() media!: Media;
   @Input({required: true}) action: ACTION = ACTION.CREATE;
   @Output() isComplete = new EventEmitter<ToastMessage>();

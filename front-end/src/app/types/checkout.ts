@@ -1,5 +1,5 @@
 import {OrderStatus, PaymentStatus} from "./enum";
-import {FullProduct, ProductMedia} from "./product";
+import {ProductWithMedia, ProductWithUserAndMedia} from "./product";
 import {User} from "./user";
 
 export interface CheckoutFormData {
@@ -51,7 +51,7 @@ export interface BillingAddress extends ShippingAddress {}
 
 export interface OrderSummary {
     items: {
-        item: ProductMedia,
+        item: ProductWithMedia,
         quantity: number,
     }[];
     subtotal: number;
@@ -118,7 +118,7 @@ export interface Order {
     shippingAddress: ShippingAddress,
     billingAddress: BillingAddress
     orderItems: OrderItem[]
-    fullOrderItem: FullProduct[]
+    fullOrderItem: ProductWithUserAndMedia[]
     customer: User
 }
 
@@ -155,7 +155,7 @@ export interface UserStatisticsDTO {
     favoriteSellerId: string;
 
     favoriteSeller: User;
-    mostPurchasedProduct: ProductMedia
+    mostPurchasedProduct: ProductWithMedia
 }
 
 export interface SellerStatisticsDTO {
@@ -181,5 +181,5 @@ export interface SellerStatisticsDTO {
     favoriteCustomerId: string;
 
     favoriteCustomer: User;
-    bestSellingProduct: ProductMedia
+    bestSellingProduct: ProductWithMedia
 }

@@ -2,9 +2,10 @@ package com.zone01.product.product;
 
 import com.zone01.product.config.kafka.AccessValidation;
 import com.zone01.product.config.kafka.MediaServices;
-import com.zone01.product.dto.*;
 import com.zone01.product.model.Response;
 import com.zone01.product.model.Role;
+import com.zone01.product.model.StatusFilter;
+import com.zone01.product.model.dto.*;
 import jakarta.servlet.http.HttpServletRequest;
 
 import lombok.RequiredArgsConstructor;
@@ -13,10 +14,10 @@ import org.springframework.data.domain.*;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -31,29 +32,31 @@ public class ProductsService {
     private final MediaServices mediaServices;
     private final MongoTemplate mongoTemplate;
 
-    public Response<Page<Products>> getAllProducts(int page, int size) {
-        var products = productsRepository.findAll(PageRequest.of(page, size));
+    public Response<Page<ProductDTO>> getAllProducts(int page, int size) {
+        var products = productsRepository.findByActiveAndDeleted(true, false, PageRequest.of(page, size));
         return Response.when(
                 products.isEmpty() || !products.hasContent(),
-                () -> Response.ok(products),
+                () -> Response.ok(Products.toProductsDTO(products)),
                 () -> Response.notFound("No products found!")
         );
     }
 
-    public Response<List<Products>> isProductAvailable(List<ProductAvailableRequest> dto) {
+    public Response<List<ProductDTO>> isProductAvailable(List<ProductAvailableRequest> dto) {
         List<String> productIds = dto.stream()
                 .map(ProductAvailableRequest::getId)
                 .toList();
 
-        List<Products> products = productsRepository.findByIdIn(productIds);
+        List<ProductDTO> products = Products.toProductsDTO(
+                productsRepository.findByActiveAndDeletedAndIdIn(true, false, productIds)
+        );
 
-        Map<String, Products> productMap = products.stream()
-                .collect(Collectors.toMap(Products::getId, Function.identity()));
+        Map<String, ProductDTO> productMap = products.stream()
+                .collect(Collectors.toMap(ProductDTO::getId, Function.identity()));
 
         var grouped = dto.stream()
                 .collect(Collectors.groupingBy(
                         request -> {
-                            Products product = productMap.get(request.getId());
+                            ProductDTO product = productMap.get(request.getId());
                             return product != null && product.getQuantity() >= request.getQuantity();
                         },
                         Collectors.mapping(
@@ -62,8 +65,8 @@ public class ProductsService {
                         )
                 ));
 
-        List<Products> available = grouped.getOrDefault(true, List.of());
-        List<Products> unavailable = grouped.getOrDefault(false, List.of());
+        List<ProductDTO> available = grouped.getOrDefault(true, List.of());
+        List<ProductDTO> unavailable = grouped.getOrDefault(false, List.of());
         return Response.when(
                 unavailable.isEmpty(),
                 () -> Response.ok(available, "All products are available"),
@@ -71,13 +74,11 @@ public class ProductsService {
         );
     }
 
-    public Response<List<Products>> updateProductQuantities(Map<String, Integer> dto) {
+    public Response<List<ProductDTO>> updateProductQuantitiesAfterConfirmingOrder(Map<String, Integer> dto) {
         List<String> productIds = new ArrayList<>(dto.keySet());
+        List<Products> products = productsRepository.findByActiveAndDeletedAndIdIn(true, false,productIds);
+        if (products.isEmpty()) return Response.notFound("No products found!");
 
-        // Fetch all matching products
-        List<Products> products = productsRepository.findByIdIn(productIds);
-
-        // Map for easy lookup
         Map<String, Products> productMap = products.stream()
                 .collect(Collectors.toMap(Products::getId, Function.identity()));
 
@@ -86,29 +87,64 @@ public class ProductsService {
             Products product = productMap.get(productId);
             if (product != null) {
                 int newQuantity = product.getQuantity() - quantityToSubtract;
-                product.setQuantity(Math.max(newQuantity, 0)); // Avoid negative quantity
+                product.setQuantity(Math.max(newQuantity, 0));
+                product.setUpdatedAt(new Date());
             }
         });
 
-        return Response.<List<Products>>builder()
-                .status(HttpStatus.OK.value())
-                .message("Product quantities updated successfully")
-                .data(productsRepository.saveAll(productMap.values()))
-                .build();
+        var updatedProducts = productsRepository.saveAll(productMap.values());
+        return Response.ok(Products.toProductsDTO(updatedProducts), "Product quantities updated successfully");
     }
 
-    public Response<Products> getProductById(String id) {
+    public Response<List<ProductDTO>> markAsActive(Map<String, Boolean> dto) {
+        List<String> productIds = new ArrayList<>(dto.keySet());
+        List<Products> products = productsRepository.findByDeletedAndIdIn(false, productIds);
+
+        if (products.isEmpty()) return Response.notFound("No products found!");
+
+        Map<String, Products> productMap = products.stream()
+                .collect(Collectors.toMap(Products::getId, Function.identity()));
+
+        dto.forEach((productId, active) -> {
+            Products product = productMap.get(productId);
+            if (product != null) {
+                product.setActive(active);
+                product.setUpdatedAt(new Date());
+            }
+        });
+
+        var updatedProducts = productsRepository.saveAll(productMap.values());
+        return Response.ok(Products.toProductsDTO(updatedProducts), "Product status updated successfully");
+    }
+
+    public Response<ProductDTO> getProductById(String id) {
+        log.info("====== Getting product by id: {} ======", id);
+        Products product = productsRepository.findByIdAndActiveAndDeleted(id, true, false).orElse(null);
+
+        if (product == null) return Response.notFound("Product not found!");
+        return Response.ok(product.toProductDTO(), "Successfully retrieved product");
+    }
+
+    public Response<ProductDTO> getProductByIdEvenDeletedOrNoneActivated(String id) {
         log.info("====== Getting product by id: {} ======", id);
         Products product = productsRepository.findById(id).orElse(null);
-        return Response.when(
-                product != null,
-                () -> Response.ok(product, "Successfully retrieved product"),
-                () -> Response.notFound("Product not found!")
-        );
+
+        if (product == null) return Response.notFound("Product not found!");
+        return Response.ok(product.toProductDTO(), "Successfully retrieved product");
     }
 
-    public Response<List<Products>> getProductById(List<String> id) {
-        List<Products> products = productsRepository.findByIdIn(id);
+    public Response<ProductDTO> getProductByIdNotDeleted(String productId) {
+        log.info("====== Getting product by id: {} ======", productId);
+        Products product = productsRepository.findByIdAndDeleted(productId, false).orElse(null);
+
+        if (product == null) return Response.notFound("Product not found!");
+        return Response.ok(product.toProductDTO(), "Successfully retrieved product");
+    }
+
+    public Response<List<ProductDTO>> getProductsByIdForCheckout(List<String> id) {
+        List<ProductDTO> products = Products.toProductsDTO(
+                productsRepository.findByActiveAndDeletedAndIdIn(true, false, id)
+        );
         return Response.when(
                 !products.isEmpty(),
                 () -> Response.ok(products, "Successfully retrieved products"),
@@ -116,8 +152,10 @@ public class ProductsService {
         );
     }
 
-    public Response<Page<Products>> getProductByUserId(String id, int page, int size) {
-        var products = productsRepository.findProductsByUserID(id, PageRequest.of(page, size));
+    public Response<Page<ProductDTO>> getProductByUserId(String id, int page, int size) {
+        var products = Products.toProductsDTO(
+                productsRepository.findByUserIDAndDeleted(id, false,  PageRequest.of(page, size))
+        );
         return Response.when(
                 !(products.isEmpty() || !products.hasContent()),
                 () -> Response.ok(products, "Successfully retrieved products"),
@@ -125,18 +163,18 @@ public class ProductsService {
         );
     }
 
-    public Response<Products> createProduct(CreateProductDTO dto, HttpServletRequest request) {
+    public Response<ProductDTO> createProduct(CreateProductDTO dto, HttpServletRequest request) {
         UserDTO currentUser = AccessValidation.getCurrentUser(request);
         if (currentUser.getRole() != Role.SELLER) return Response.forbidden("Only sellers can create products");
 
         Products savedProduct = productsRepository.save(dto.toProducts(currentUser.getId()));
-        return Response.created(savedProduct, "Product created successfully");
+        return Response.created(savedProduct.toProductDTO(), "Product created successfully");
     }
 
     private Response<Products> authorizeAndGetProduct(HttpServletRequest request, String id) {
         UserDTO currentUser = AccessValidation.getCurrentUser(request);
 
-        Products product = productsRepository.findById(id).orElse(null);
+        Products product = productsRepository.findByIdAndDeleted(id, false).orElse(null);
         if (product == null) return Response.notFound("Product not found!");
 
         if (!currentUser.getId().equals(product.getUserID()))
@@ -145,22 +183,23 @@ public class ProductsService {
         return Response.ok(product);
     }
 
-    public Response<Products> updateProduct(HttpServletRequest request, String id, UpdateProductsDTO updateProductsDTO) {
+    public Response<ProductDTO> updateProduct(HttpServletRequest request, String id, UpdateProductsDTO updateProductsDTO) {
         Response<Products> authorizationResponse = authorizeAndGetProduct(request, id);
-        if (authorizationResponse.isError()) return authorizationResponse;
+        if (authorizationResponse.isError()) return Response.mapper(authorizationResponse);
 
         Products product = authorizationResponse.getData();
 
-        Response<Products> updateResponse = updateProductsDTO.applyUpdates(product);
+        Response<ProductDTO> updateResponse = updateProductsDTO.applyUpdates(product);
         if (updateResponse != null) return updateResponse;
 
+        product.setUpdatedAt(new Date());
         Products updatedProduct = productsRepository.save(product);
-        return Response.ok(updatedProduct, "Product updated successfully");
+        return Response.ok(updatedProduct.toProductDTO(), "Product updated successfully");
     }
 
-    public Response<Products> deleteProduct(String id, HttpServletRequest request) {
+    public Response<ProductDTO> deleteProduct(String id, HttpServletRequest request) {
         Response<Products> authorizationResponse = authorizeAndGetProduct(request, id);
-        if (authorizationResponse.isError()) return authorizationResponse;
+        if (authorizationResponse.isError()) return Response.mapper(authorizationResponse);
 
         Products product = authorizationResponse.getData();
         Response<Object> deletedMediaResponse = mediaServices.deleteMediaRelatedToProduct(List.of(product.getId()));
@@ -168,12 +207,15 @@ public class ProductsService {
             return Response.mapper(deletedMediaResponse);
         }
 
-        productsRepository.deleteById(id);
-        return Response.ok(product, "Product deleted successfully");
+        product.setActive(false);
+        product.setDeleted(true);
+        product.setDeletedAt(new Date());
+        productsRepository.save(product);
+        return Response.ok(product.toProductDTO(), "Product deleted successfully");
     }
 
-    public Response<List<Products>> deleteProductsByUserId(String userId) {
-        List<Products> products = productsRepository.findByUserID(userId).orElse(null);
+    public Response<List<ProductDTO>> deleteProductsByUserId(String userId) {
+        List<Products> products = productsRepository.findByUserIDAndDeleted(userId, false).orElse(null);
         if (products == null || products.isEmpty()) return Response.notFound("No products found!");
 
         List<String> ids = products.stream().map(Products::getId).collect(Collectors.toList());
@@ -181,17 +223,25 @@ public class ProductsService {
         Response<Object> deletedMediaResponse = mediaServices.deleteMediaRelatedToProduct(ids);
         if (deletedMediaResponse != null) return Response.mapper(deletedMediaResponse);
 
-        productsRepository.deleteAllById(ids);
-        return Response.ok(products, "Products deleted successfully");
+        List<ProductDTO> deletedProducts = products.stream()
+                        .map(p -> {
+                            p.setActive(false);
+                            p.setDeleted(true);
+                            p.setDeletedAt(new Date());
+                            productsRepository.save(p);
+                            return p.toProductDTO();
+                        }).toList();
+        return Response.ok(deletedProducts, "Products deleted successfully");
     }
 
-
-    public Response<Page<Products>> searchProducts(ProductSearchCriteria searchCriteria) {
+    public Response<Page<ProductDTO>> searchProducts(ProductSearchCriteria searchCriteria) {
         Query query = buildQuery(searchCriteria);
 
         // Get total count for pagination
         long totalCount = mongoTemplate.count(query, Products.class);
-        List<Products> products = mongoTemplate.find(applyPaginationAndSorting(query, searchCriteria), Products.class);
+        List<ProductDTO> products = Products.toProductsDTO(
+                mongoTemplate.find(applyPaginationAndSorting(query, searchCriteria), Products.class)
+        );
 
         // Create pageable
         Pageable pageable = PageRequest.of(searchCriteria.getPage(), searchCriteria.getSize());
@@ -204,10 +254,10 @@ public class ProductsService {
 
     }
 
-
     private Query buildQuery(ProductSearchCriteria criteria) {
         Query query = new Query();
         List<Criteria> criteriaList = new ArrayList<>();
+        StatusFilter.addStatusFilter(query, StatusFilter.ACTIVE_ONLY);
 
         // Keyword search (searches in multiple fields)
         if (criteria.getKeyword() != null && !criteria.getKeyword().trim().isEmpty()) {

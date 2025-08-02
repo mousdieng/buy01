@@ -202,9 +202,9 @@ export class OrderService {
                 // Enrich each order item with product and media
                 const fullOrderItems$ = order.orderItems.map(item =>
                     forkJoin({
-                        user: this.userService.getUserById(item.sellerId).pipe(map(res => res.data)),
-                        product: this.productService.getProductById(item.productId).pipe(map(res => res.data)),
-                        media: this.mediaService.getMediaByProductId(item.productId).pipe(map(res => res.data))
+                        user: this.userService.getUserByIdEvenDeleted(item.sellerId).pipe(map(res => res.data)),
+                        product: this.productService.getProductByIdEvenDeletedOrNoneActive(item.productId).pipe(map(res => res.data)),
+                        media: this.mediaService.getMediaByProductIdEvenDeleted(item.productId).pipe(map(res => res.data))
                     }).pipe(
                         map(({ user, product, media }) => ({ user, product, media }))
                     )
@@ -251,9 +251,9 @@ export class OrderService {
                 const enrichedOrders$ = orders.map(order => {
                     const fullOrderItems$ = order.orderItems.map(item =>
                         forkJoin({
-                            user: this.userService.getUserById(item.sellerId).pipe(map(res => res.data)),
-                            product: this.productService.getProductById(item.productId).pipe(map(res => res.data)),
-                            media: this.mediaService.getMediaByProductId(item.productId).pipe(map(res => res.data))
+                            user: this.userService.getUserByIdEvenDeleted(item.sellerId).pipe(map(res => res.data)),
+                            product: this.productService.getProductByIdEvenDeletedOrNoneActive(item.productId).pipe(map(res => res.data)),
+                            media: this.mediaService.getMediaByProductIdEvenDeleted(item.productId).pipe(map(res => res.data))
                         }).pipe(
                             map(({ user, product, media }) => ({ user, product, media }))
                         )
@@ -386,9 +386,9 @@ export class OrderService {
                 const stats = orderResponse.data;
 
                 return forkJoin({
-                    favoriteSeller: this.userService.getUserById(stats.favoriteSellerId).pipe(map(res => res.data)),
-                    product: this.productService.getProductById(stats.mostPurchasedProductId).pipe(map(res => res.data)),
-                    media: this.mediaService.getMediaByProductId(stats.mostPurchasedProductId).pipe(map(res => res.data))
+                    favoriteSeller: this.userService.getUserByIdEvenDeleted(stats.favoriteSellerId).pipe(map(res => res.data)),
+                    product: this.productService.getProductByIdEvenDeletedOrNoneActive(stats.mostPurchasedProductId).pipe(map(res => res.data)),
+                    media: this.mediaService.getMediaByProductIdEvenDeleted(stats.mostPurchasedProductId).pipe(map(res => res.data))
                 }).pipe(
                     map(({ favoriteSeller, product, media }) => ({
                         ...stats,
@@ -415,9 +415,9 @@ export class OrderService {
             switchMap(orderResponse => {
                 const stats = orderResponse.data;
                 return forkJoin({
-                    favoriteCustomer: this.userService.getUserById(stats.favoriteCustomerId).pipe(map(res => res.data)),
-                    product: this.productService.getProductById(stats.bestSellingProductId).pipe(map(res => res.data)),
-                    media: this.mediaService.getMediaByProductId(stats.bestSellingProductId).pipe(map(res => res.data))
+                    favoriteCustomer: this.userService.getUserByIdEvenDeleted(stats.favoriteCustomerId).pipe(map(res => res.data)),
+                    product: this.productService.getProductByIdEvenDeletedOrNoneActive(stats.bestSellingProductId).pipe(map(res => res.data)),
+                    media: this.mediaService.getMediaByProductIdEvenDeleted(stats.bestSellingProductId).pipe(map(res => res.data))
                 }).pipe(
                     map(({ favoriteCustomer, product, media }) => ({
                         ...stats,

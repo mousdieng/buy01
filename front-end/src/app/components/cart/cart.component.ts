@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {DatePipe, DecimalPipe, NgClass, NgForOf, NgIf} from "@angular/common";
-import {Cart, CartItem, Media, ProductMedia} from "../../types"
+import {Cart, CartItem, Media} from "../../types"
 import {Subject, takeUntil} from "rxjs";
 import {CartService} from "../../services/cart/cart.service";
 import {Router, RouterLink, RouterLinkActive} from "@angular/router";

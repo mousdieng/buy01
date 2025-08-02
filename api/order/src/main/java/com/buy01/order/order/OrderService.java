@@ -3,6 +3,7 @@ package com.buy01.order.order;
 import com.buy01.order.config.kafka.AccessValidation;
 import com.buy01.order.model.*;
 import com.buy01.order.model.dto.CancelOrderRequestDTO;
+import com.buy01.order.model.dto.OrderDTO;
 import com.buy01.order.model.dto.OrderItem;
 import com.buy01.order.model.dto.UserDTO;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,9 +29,9 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final MongoTemplate mongoTemplate;
 
-    public Response<Order> getOrderById(String orderId, HttpServletRequest request) {
+    public Response<OrderDTO> getOrderById(String orderId, HttpServletRequest request) {
         UserDTO currentUser = AccessValidation.getCurrentUser(request);
-        Optional<Order> orderOptional = orderRepository.findById(orderId);
+        Optional<Order> orderOptional = orderRepository.findByIdAndDeletedFalse(orderId);
         if (orderOptional.isEmpty()) return Response.notFound("Order not found");
 
         Order order = orderOptional.get();
@@ -41,29 +42,29 @@ public class OrderService {
             order.setOrderItems(filterOrderItems);
         }
 
-        return Response.ok(order, "Order retrieved successfully");
+        return Response.ok(order.toDTO(), "Order retrieved successfully");
 
     }
 
-    public Response<Page<Order>> getIncompleteOrdersByUserId(HttpServletRequest request, int page, int size) {
+    public Response<Page<OrderDTO>> getIncompleteOrdersByUserId(HttpServletRequest request, int page, int size) {
         log.info("Retrieving incomplete orders for user");
         UserDTO currentUser = AccessValidation.getCurrentUser(request);
         if (currentUser.getRole() != Role.CLIENT) return Response.forbidden("Only clients can perform this operation");
 
-        Page<Order> incompleteOrders = orderRepository.findByUserIdAndPaymentStatusOrderByCreatedAtDesc(
+        Page<Order> incompleteOrders = orderRepository.findByUserIdAndDeletedFalseAndPaymentStatusOrderByCreatedAtDesc(
                 currentUser.getId(), PaymentStatus.INCOMPLETE, PageRequest.of(page, size));
         log.info("Retrieved {} incomplete orders for user {}", incompleteOrders.getTotalElements(), currentUser.getId());
-        return Response.ok(incompleteOrders, "Incomplete orders retrieved successfully");
+        return Response.ok(Order.toDTO(incompleteOrders), "Incomplete orders retrieved successfully");
     }
 
     /**
      * Cancel an order
      */
-    public Response<Order> cancelOrder(CancelOrderRequestDTO dto, HttpServletRequest request) {
+    public Response<OrderDTO> cancelOrder(CancelOrderRequestDTO dto, HttpServletRequest request) {
         UserDTO currentUser = AccessValidation.getCurrentUser(request);
         if (currentUser.getRole() != Role.CLIENT) return Response.forbidden("Only clients can perform this operation");
 
-        Optional<Order> orderOpt = orderRepository.findById(dto.getOrderId());
+        Optional<Order> orderOpt = orderRepository.findByIdAndDeletedFalse(dto.getOrderId());
         if (orderOpt.isEmpty()) return Response.notFound("Order not found");
 
         Order order = orderOpt.get();
@@ -90,17 +91,17 @@ public class OrderService {
         order.setStatusHistory(historyList);
 
         Order savedOrder = orderRepository.save(order);
-        return Response.ok(savedOrder, "Order cancelled successfully");
+        return Response.ok(savedOrder.toDTO(), "Order cancelled successfully");
     }
 
     /**
      * Delete an order (soft delete)
      */
-    public Response<Order> deleteOrder(String orderId, HttpServletRequest request) {
+    public Response<OrderDTO> deleteOrder(String orderId, HttpServletRequest request) {
         UserDTO currentUser = AccessValidation.getCurrentUser(request);
         if (currentUser.getRole() != Role.CLIENT) return Response.forbidden("Only clients can perform this operation");
 
-        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        Optional<Order> orderOpt = orderRepository.findByIdAndDeletedFalse(orderId);
         if (orderOpt.isEmpty()) return Response.notFound("Order not found");
 
         Order order = orderOpt.get();
@@ -111,17 +112,20 @@ public class OrderService {
             return Response.badRequest("Only cancelled or failed orders can be deleted");
         }
 
-        orderRepository.delete(order);
-        return Response.ok(order,"Order deleted successfully");
+        order.setDeleted(true);
+        order.setDeletedAt(new Date());
+        orderRepository.save(order);
+        return Response.ok(order.toDTO(),"Order deleted successfully");
     }
 
-    public Page<Order> searchOrdersPaginated(HttpServletRequest request, String keyword,
+    public Page<OrderDTO> searchOrdersPaginated(HttpServletRequest request, String keyword,
                                              OrderStatus status, PaymentStatus paymentStatus,
                                              Date startDate, Date endDate, int page, int size) {
 
         UserDTO currentUser = AccessValidation.getCurrentUser(request);
 
         List<Criteria> criteriaList = new ArrayList<>();
+        criteriaList.add(Criteria.where("deleted").is(false));
         criteriaList.add(new Criteria().orOperator(
                 Criteria.where("userId").is(currentUser.getId()),
                 Criteria.where("orderItems.sellerId").is(currentUser.getId())
@@ -175,82 +179,79 @@ public class OrderService {
             }).collect(Collectors.toList());
         }
 
-        return new PageImpl<>(results, PageRequest.of(page, size), count);
-    }
-
-
-    public Response<Page<Order>> getUserOrdersPaginated(HttpServletRequest request, int page, int size) {
-        UserDTO currentUser = AccessValidation.getCurrentUser(request);
-        if (currentUser.getRole() != Role.CLIENT) return Response.forbidden("Only clients can perform this operation");
-
-        Page<Order> orderPage = orderRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId(), PageRequest.of(page, size));
-        return Response.ok(orderPage, "Orders retrieved successfully");
-    }
-
-    /**
-     * Get seller orders with pagination
-     */
-    public Response<Page<Order>> getSellerOrdersPaginated(HttpServletRequest request, int page, int size) {
-        UserDTO currentUser = AccessValidation.getCurrentUser(request);
-        if (currentUser.getRole() != Role.SELLER) return Response.forbidden("Only sellers can perform this operation.");
-
-        Page<Order> orderPage = orderRepository.findBySellerId(currentUser.getId(), PageRequest.of(page, size));
-        List<Order> filteredOrders = orderPage.getContent().stream()
-                .peek(order -> {
-                    List<OrderItem> filteredItems = order.getOrderItems().stream()
-                            .filter(item -> item.getSellerId().equals(currentUser.getId()))
-                            .collect(Collectors.toList());
-                    order.setOrderItems(filteredItems);
-                }).collect(Collectors.toList());
-
-        Page<Order> customPage = new PageImpl<>(filteredOrders, orderPage.getPageable(), orderPage.getTotalElements());
-        return Response.ok(customPage, "Seller orders retrieved successfully");
-    }
-
-    /**
-     * Update order status (for sellers)
-     */
-    public Response<Order> updateOrderStatus(String orderId, String sellerId,
-                                             OrderStatus newStatus) {
-        Optional<Order> orderOpt = orderRepository.findById(orderId);
-        if (orderOpt.isEmpty()) {
-            return Response.notFound("Order not found");
-        }
-
-        Order order = orderOpt.get();
-
-        // Validate seller ownership
-//        if (!order.getSellerId().equals(sellerId)) {
-//            return Response.forbidden("You can only update your own orders");
-//        }
-
-        // Update status
-        order.setStatus(newStatus);
-        order.setUpdatedAt(new Date());
-
-        if (newStatus == OrderStatus.DELIVERED) {
-            order.setCompletedAt(new Date());
-        }
-
-        // Add status history
-        OrderStatusHistory statusHistory = OrderStatusHistory.builder()
-                .status(newStatus)
-                .paymentStatus(order.getPaymentStatus())
-                .timestamp(new Date())
-                .build();
-
-        List<OrderStatusHistory> historyList = order.getStatusHistory() != null
-                ? new ArrayList<>(order.getStatusHistory())
-                : new ArrayList<>();
-        historyList.add(statusHistory);
-        order.setStatusHistory(historyList);
-
-        Order savedOrder = orderRepository.save(order);
-        return Response.ok(savedOrder, "Order status updated successfully");
+        return new PageImpl<>(Order.toDTO(results), PageRequest.of(page, size), count);
     }
 }
 
+//public Response<Page<Order>> getUserOrdersPaginated(HttpServletRequest request, int page, int size) {
+//    UserDTO currentUser = AccessValidation.getCurrentUser(request);
+//    if (currentUser.getRole() != Role.CLIENT) return Response.forbidden("Only clients can perform this operation");
+//
+//    Page<Order> orderPage = orderRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId(), PageRequest.of(page, size));
+//    return Response.ok(orderPage, "Orders retrieved successfully");
+//}
+//
+///**
+// * Get seller orders with pagination
+// */
+//public Response<Page<Order>> getSellerOrdersPaginated(HttpServletRequest request, int page, int size) {
+//    UserDTO currentUser = AccessValidation.getCurrentUser(request);
+//    if (currentUser.getRole() != Role.SELLER) return Response.forbidden("Only sellers can perform this operation.");
+//
+//    Page<Order> orderPage = orderRepository.findBySellerId(currentUser.getId(), PageRequest.of(page, size));
+//    List<Order> filteredOrders = orderPage.getContent().stream()
+//            .peek(order -> {
+//                List<OrderItem> filteredItems = order.getOrderItems().stream()
+//                        .filter(item -> item.getSellerId().equals(currentUser.getId()))
+//                        .collect(Collectors.toList());
+//                order.setOrderItems(filteredItems);
+//            }).collect(Collectors.toList());
+//
+//    Page<Order> customPage = new PageImpl<>(filteredOrders, orderPage.getPageable(), orderPage.getTotalElements());
+//    return Response.ok(customPage, "Seller orders retrieved successfully");
+//}
 
+///**
+// * Update order status (for sellers)
+// */
+//public Response<Order> updateOrderStatus(String orderId, String sellerId,
+//                                         OrderStatus newStatus) {
+//    Optional<Order> orderOpt = orderRepository.findById(orderId);
+//    if (orderOpt.isEmpty()) {
+//        return Response.notFound("Order not found");
+//    }
+//
+//    Order order = orderOpt.get();
+//
+//    // Validate seller ownership
+////        if (!order.getSellerId().equals(sellerId)) {
+////            return Response.forbidden("You can only update your own orders");
+////        }
+//
+//    // Update status
+//    order.setStatus(newStatus);
+//    order.setUpdatedAt(new Date());
+//
+//    if (newStatus == OrderStatus.DELIVERED) {
+//        order.setCompletedAt(new Date());
+//    }
+//
+//    // Add status history
+//    OrderStatusHistory statusHistory = OrderStatusHistory.builder()
+//            .status(newStatus)
+//            .paymentStatus(order.getPaymentStatus())
+//            .timestamp(new Date())
+//            .build();
+//
+//    List<OrderStatusHistory> historyList = order.getStatusHistory() != null
+//            ? new ArrayList<>(order.getStatusHistory())
+//            : new ArrayList<>();
+//    historyList.add(statusHistory);
+//    order.setStatusHistory(historyList);
+//
+//    Order savedOrder = orderRepository.save(order);
+//    return Response.ok(savedOrder, "Order status updated successfully");
+//}
 //
 //    public Response<List<Order>> getOrdersByUserId(String userId) {
 //        List<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
