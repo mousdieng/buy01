@@ -15,6 +15,13 @@ spring:
       uri: mongodb://user:password@172.20.0.1:27017/buy01?authSource=admin
       auto-index-creation: true
 
+payduya:
+  main-key:   'pNzWmqne-WMXi-CDFX-neqK-IAV9hna1RIJ7'
+  production:
+    public-key: 'live_public_qTyUL2O1YCIA5jb3FLmGZDWi5fl'
+    private-key:  'live_private_8o8fjQhyq2LXaJ3fF0GuPaT7CjL'
+    token:  'WAdUvY3jsvMGMOLc2Dro'
+
 eureka:
   client:
     service-url:
