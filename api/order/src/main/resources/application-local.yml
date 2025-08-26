@@ -25,12 +25,6 @@ stripe:
   webhook:
     secret: ""
 
-payduya:
-  main-key:  'pNzWmqne-WMXi-CDFX-neqK-IAV9hna1RIJ7'
-  test:
-    public-key: 'test_public_4wnoC6qtQEBdnhRhldVyTFfVj5l'
-    private-key:  'test_private_cCdZjtGW3LXrDoiGvu9QaXupuui'
-    token:  'AdBctw8Miz2ouSmClKHF'
 
 
 server:
